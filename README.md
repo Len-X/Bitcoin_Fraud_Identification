@@ -1,2 +1,2 @@
-# Bitcoin_Fraud_Identification
+# Bitcoin Fraud Identification
 Master Thesis
