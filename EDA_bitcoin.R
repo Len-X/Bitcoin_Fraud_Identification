@@ -17,9 +17,9 @@ library(broom)      # for function `tidy`
 library(dgof)       # for Kolmogorov-Smirnov Test
 
 # load data
-df1 <- read.csv("Bitcoin/elliptic_bitcoin_dataset/elliptic_txs_classes.csv")
-df2 <- read.csv("Bitcoin/elliptic_bitcoin_dataset/elliptic_txs_edgelist.csv")
-df3 <- read.csv("Bitcoin/elliptic_bitcoin_dataset/elliptic_txs_features.csv", header = FALSE)
+df1 <- read.csv("Bitcoin_Fraud_Identification/elliptic_bitcoin_dataset/elliptic_txs_classes.csv")
+df2 <- read.csv("Bitcoin_Fraud_Identification/elliptic_bitcoin_dataset/elliptic_txs_edgelist.csv")
+df3 <- read.csv("Bitcoin_Fraud_Identification/elliptic_bitcoin_dataset/elliptic_txs_features.csv", header = FALSE)
 
 # data shape
 dim(df1)
@@ -84,7 +84,7 @@ names(df3)[3:ncol(df3)] <- unlist(mapply(function(x,y) paste(x, seq(1,y), sep="_
 full_df <- merge(df1, df3, by = "txId", sort=FALSE)
 
 # Saving as csv file
-# write_csv(full_df, "Bitcoin/data/Bitcoin_Full_df.csv")
+# write_csv(full_df, "Bitcoin_Fraud_Identification/Data/Bitcoin_Full_df.csv")
 
 
 # plot time frequencies by class
