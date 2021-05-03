@@ -317,8 +317,8 @@ ks_test_results
 # small p-values suggesting strong evidence of non-normality. We reject H0 hypothesis.
 
 
-
-
+# detach full_df
+detach(full_df)
 
 
 
