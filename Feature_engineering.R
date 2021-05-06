@@ -51,6 +51,8 @@ spearman_cor_heatmap
 
 ### Train / Validation / Test Split ###
 
+set.seed(2021)
+
 # full df with all features
 # train_full <- df[TimeStep <= 29, ]
 train_full <- df %>% filter(TimeStep <= 29)
@@ -76,8 +78,9 @@ test_local <- test_full %>% select(1:96)
 # we first perform Boruta algorithm on Local features
 
 set.seed(2021)
+
 boruta_local <-
-  df %>% 
+  train_local %>% 
   filter(class != 3) %>% 
   select(class, starts_with("Local")) %>% 
   Boruta(class ~ ., data=., doTrace=2)
@@ -87,6 +90,25 @@ print(boruta_local)
 # maxRuns - maximal number of importance source runs. Default = 100
 # doTrace - verbosity level
 
+# plot the boruta_local variable importance
+plot(boruta_local, xlab = "", xaxt = "n")
+lz <- lapply(1:ncol(boruta_local$ImpHistory), function(i)
+boruta_local$ImpHistory[is.finite(boruta_local$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta_local$ImpHistory)
+Labels <- sort(sapply(lz, median))
+axis(side = 1,las=2,labels = names(Labels),
+at = 1:ncol(boruta_local$ImpHistory), cex.axis = 0.7)
+
+# obtain the list of confirmed attributes
+selected_local <- getSelectedAttributes(boruta_local, withTentative = F)
+selected_local
+
+# data frame of the final result derived from Boruta
+df_boruta_local <- attStats(boruta_local)
+print(df_boruta_local)
+
+# run Boruna on all features
+
 boruta_all <-
   df %>% 
   filter(class != 3) %>% 
@@ -94,6 +116,25 @@ boruta_all <-
 
 print(boruta_all)
 
+# plot the boruta_all variable importance
+plot(boruta_all, xlab = "", xaxt = "n")
+lz <- lapply(1:ncol(boruta_all$ImpHistory), function(i)
+  boruta_all$ImpHistory[is.finite(boruta_all$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta_all$ImpHistory)
+Labels <- sort(sapply(lz, median))
+axis(side = 1,las=2,labels = names(Labels),
+  at = 1:ncol(boruta_all$ImpHistory), cex.axis = 0.7)
+
+# obtain the list of confirmed attributes
+selected_all <- getSelectedAttributes(boruta_all, withTentative = F)
+selected_all
+
+# data frame of the final result derived from Boruta
+df_boruta_all <- attStats(boruta_all)
+print(df_boruta_all)
+
+
+# run Boruna on Aggregated features
 
 boruta_aggregated <-
   train_full %>% 
@@ -102,6 +143,70 @@ boruta_aggregated <-
   Boruta(class ~ ., data=., doTrace=2)
 
 print(boruta_aggregated)
+
+
+# plot the boruta_aggregated variable importance
+plot(boruta_aggregated, xlab = "", xaxt = "n")
+lz <- lapply(1:ncol(boruta_aggregated$ImpHistory), function(i)
+  boruta_aggregated$ImpHistory[is.finite(boruta_aggregated$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta_aggregated$ImpHistory)
+Labels <- sort(sapply(lz, median))
+axis(side = 1,las=2,labels = names(Labels),
+     at = 1:ncol(boruta_aggregated$ImpHistory), cex.axis = 0.7)
+
+# obtain the list of confirmed attributes
+selected_aggregated <- getSelectedAttributes(boruta_aggregated, withTentative = F)
+selected_aggregated
+
+# data frame of the final result derived from Boruta
+df_boruta_aggregated <- attStats(boruta_aggregated)
+print(df_boruta_aggregated)
+
+
+### Autoencoder ###
+
+# autoencoder in Keras
+suppressPackageStartupMessages(library(keras))
+
+
+# set training data as matrix
+x_train_local <- as.matrix(train_local)
+
+# set model
+model <- keras_model_sequential()
+model %>%
+  layer_dense(units = 60, activation = "tanh", input_shape = ncol(x_train_local)) %>%
+  layer_dense(units = 20, activation = "tanh", name = "bottleneck") %>%
+  layer_dense(units = 60, activation = "tanh") %>%
+  layer_dense(units = ncol(x_train_local))
+
+# view model layers
+summary(model)
+
+
+# compile model
+model %>% compile(
+  loss = "mean_squared_error", 
+  optimizer = "adam"
+)
+
+# fit model
+model %>% fit(
+  x = x_train_local, 
+  y = x_train_local, 
+  epochs = 10,  # try 100, 1000
+  verbose = 0
+)
+
+# evaluate the performance of the model
+mse_ae <- evaluate(model, x_train_local, x_train_local)
+mse_ae
+
+# extract the bottleneck layer
+intermediate_layer_model <- keras_model(inputs = model$input, outputs = get_layer(model, "bottleneck")$output)
+intermediate_output <- predict(intermediate_layer_model, x_train_local)
+intermediate_output
+
 
 
 
