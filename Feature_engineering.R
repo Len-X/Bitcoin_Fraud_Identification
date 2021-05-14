@@ -224,6 +224,170 @@ intermediate_output
 write.csv(intermediate_output, "ae_16features_500epoch.csv", row.names = FALSE)
 
 
+### Autoencoder with H2O
+
+# source: https://hub.packtpub.com/implementing-autoencoders-using-h2o/
+
+library("h2o")
+h2o.init()
+
+# load training data set with Local Features only
+
+ae_train_local <-
+  train_local %>% 
+  filter(class != 3) %>% 
+  select(class, starts_with("Local"))
+
+outcome_name <- "class"
+feature_names <- setdiff(names(ae_train_local), outcome_name)
+
+model=h2o.deeplearning(x=feature_names,
+                       training_frame=as.h2o(ae_train_local),
+                       hidden=c(55, 20, 55),
+                       autoencoder = T,
+                       activation="Tanh",
+                       epochs = 50)
+summary(model)
+
+# h2o.varimp - variable importance
+model_var_importance <- model@model$variable_importances
+model_var_importance
+
+
+features=h2o.deepfeatures(model,
+                          as.h2o(ae_train_local),
+                          layer=3)
+
+features
+
+# model@model$scoring_history$training_mse
+# ae_mse <- model@model$scoring_history$training_mse
+# plot(sort(ae_mse))
+
+# reconstruction error
+
+ae_anomaly <- h2o.anomaly(model, as.h2o(ae_train_local), per_feature = FALSE) ## try per_feature = TRUE
+ae_error <- as.data.frame(ae_anomaly)
+
+# sort and plot the reconstructed MSE. 
+
+# The autoencoder struggles from index 25,500 - 26,000 onwards as the error count accelerates upwards. 
+# We can determine that the model recognizes patterns in the first roughly 26000 observations that it 
+#ncan’t see as easily in the last 300-800.
+
+plot(sort(ae_error$Reconstruction.MSE), main='Reconstruction Error')
+
+# not sure if this is correct!!!
+d=as.matrix(features[1:93,])
+labels=as.vector(colnames(ae_train_local[-1]))
+plot(d,pch=17)
+text(d,labels,pos=3)
+
+# Create df with 20 and 55 important (hidden) features
+
+ae_features_20 <- as.data.frame(features) # hidden layer
+ae_features_55 <- as.data.frame(features) # last layer
+
+# get the average activation across neurons
+features %>% 
+  as.data.frame() %>% 
+  tidyr::gather() %>%
+  summarize(average_activation = mean(value))
+
+#   average_activation
+# 1        -0.06564738
+
+
+# Print performance
+# h2o.performance(as.h2o(features), valid = TRUE)
+
+
+
+### Recursive Feature Elimination (RFE) algorithm ###
+
+# A simple backwards selection, a.k.a. recursive feature selection (RFE), algorithm
+
+# RFE is in library Caret
+library(caret)
+
+set.seed(2021)
+
+
+rfe_train_local <-
+  train_local %>% 
+  filter(class != 3) %>% 
+  select(class, starts_with("Local"))
+
+rfe_train_local <- droplevels(rfe_train_local)
+
+# set 10-fold CV coltrols
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+
+rfe_local <- rfe(rfe_train_local[,2:94], 
+                 rfe_train_local[,1], 
+                 sizes=c(2:20), 
+                 rfeControl=control)
+
+rfe_local
+
+# list the chosen features
+predictors(rfe_local)
+# plot the results
+plot(rfe_local, type=c("g", "o"), main="Feature Selection with RFE")
+
+# rfe variables
+rfe_variables <- as.data.frame(rfe_local$variables)
+
+# save to csv
+write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables.csv", row.names = FALSE)
+
+
+### Learning Vector Quantization algorithm (LVQ) ###
+
+# (LVQ) is an artificial neural network algorithm that lets you choose how many
+# training instances to hang onto and learns exactly what those instances should look like.
+
+lvq_train_local <-
+  train_local %>% 
+  filter(class != 3) %>% 
+  select(class, starts_with("Local"))
+
+lvq_train_local <- droplevels(lvq_train_local)
+
+# prepare training scheme
+control_lvq <- trainControl(method="repeatedcv", number=10, repeats=3)
+
+# train the model
+lvq_model <- train(class ~., data=lvq_train_local, 
+                   method="lvq", 
+                   preProcess="scale", 
+                   trControl=control_lvq)
+lvq_model
+
+# estimate variable importance
+lvq_importance <- varImp(lvq_model, scale=FALSE)
+
+# summarize importance
+# Rank Features By Importance
+print(lvq_importance)
+
+# plot importance
+plot(lvq_importance, main="Feature Selection with LVQ")
+
+# sort all features by rank of importance
+lvq_sorted <- as.data.frame(lvq_importance$importance)
+lvq_sorted <- lvq_sorted[order(-lvq_sorted$X1),]
+print(lvq_sorted)
+
+# save to csv
+write.csv(lvq_sorted,"~/Desktop/MASTERS/Bitcoin/lvq_sorted_variables.csv", row.names = FALSE)
+
+
+
+
+
+
+
 
 
 
