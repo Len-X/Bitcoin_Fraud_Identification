@@ -4,6 +4,7 @@
 library(tidyverse)
 library(ggplot2)
 library(ggcorrplot)
+library(caret)
 library(pROC)
 
 ### Baseline Model ###
@@ -36,11 +37,108 @@ rfe_validation$class <- factor(rfe_validation$class, levels = c(1,2))
 rfe_validation_features <- rfe_validation %>% select(-class) # predictor variables
 rfe_validation_outcome <- rfe_validation %>% select(class)
 
+
 # fit the model
+
+set.seed(2021)
 
 glm_rfe <- glm(class ~ ., data=rfe_train, family=binomial)
 
 summary(glm_rfe)
+
+# access coefficients
+summary(glm_rfe)$coef
+# The smallest p-value here is associated with: Local_53, Local_18 and Local_52
+
+# make predictions
+rfe_glm_probs <- predict(glm_rfe, newdata=rfe_validation_features, type="response")
+
+plot(rfe_glm_probs)
+
+# first 10 probabilities for class 2
+rfe_glm_probs[1:10]
+
+contrasts(rfe_train$class)
+# the contrasts() function indicates that R has created a dummy variable
+# with 1 for class 2 and 0 for class 1.
+#   2
+# 1 0
+# 2 1
+
+# In order to make a predictions we must convert these predicted probabilities into class labels
+# assign class 2 to all probabilities with greater or more
+rfe_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+rfe_glm_preds[rfe_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+
+## Classification matrix
+classif_matrix <- table(rfe_glm_preds, rfe_validation_outcome$class)
+classif_matrix
+
+# rfe_glm_preds    1    2
+#             1   10   28
+#             2 1028 7933
+
+# set levels for predictions
+rfe_glm_preds <- as.factor(rfe_glm_preds)
+
+# Validation Metrics
+conf_matrix_rfe <- confusionMatrix(rfe_glm_preds, rfe_validation_outcome$class, positive = "1")
+conf_matrix_rfe
+
+# Confusion matrix summary
+conf_matrix_rfe$byClass
+
+# check evaluations
+
+sensitivity(classif_matrix)
+recall_rfe <- recall(classif_matrix)
+recall_rfe
+# [1] 0.009633911
+
+# accuracy
+(10+7933)/8999
+# [1] 0.8826536
+
+specificity(classif_matrix)
+# [1] 0.9964829
+
+precision_rfe <- precision(data = rfe_glm_preds, reference = rfe_validation_outcome$class, relevant = "1")
+precision_rfe
+# [1] 0.2631579
+
+# False positive rate:  1 − specificity = FP / (FP + TN)
+1-specificity(classif_matrix)
+# [1] 0.003517146
+
+# F1-score
+F1 <- (2 * ((precision_rfe * recall_rfe) / (precision_rfe + recall_rfe)))
+
+# glm model evaluation on Validation data
+rfe_glm_evaluation <- data.frame(conf_matrix_rfe$byClass)
+rfe_glm_evaluation
+
+
+# AUC/ROC
+
+# ROC Train
+fit_rfe <- fitted(glm_rfe)
+roc_rfe_train <- roc(rfe_train$class, fit_rfe)
+ggroc(roc_rfe_train)
+auc(roc_rfe_train)
+# Area under the curve: 0.8952
+
+# ROC Test
+roc_rfe_test <- roc(rfe_validation_outcome$class, rfe_glm_preds)
+ggroc(list(train=roc_rfe_train, test=roc_rfe_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with RFE features") +
+  labs(color = "")
+auc(roc_rfe_test)
+# Area under the curve: 0.5031
+
+
+
 
 
 
