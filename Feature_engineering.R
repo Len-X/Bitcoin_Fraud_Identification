@@ -10,6 +10,8 @@ library(ggplot2)
 library(ggcorrplot)
 library(viridisLite)
 library(Boruta)
+library(caret)
+library(h2o)
 
 
 # load full df
@@ -20,11 +22,11 @@ attach(df)
 ## We start by looking at correlation (Pearson and Spearman) ##
 
 # convert class "unknown" to 3
-# levels(df$class) <- sub("unknown", 3, levels(df$class))
+levels(df$class) <- sub("unknown", 3, levels(df$class))
 
-df$class[df$class == "unknown"] <- 3
-df$class <- as.numeric(factor(df$class))
-df$class <- as.factor(df$class)
+# df$class[df$class == "unknown"] <- 3
+# df$class <- as.numeric(factor(df$class))
+# df$class <- as.factor(df$class)
 
 
 # First, explore the correlation between Local Features
@@ -339,7 +341,7 @@ plot(rfe_local, type=c("g", "o"), main="Feature Selection with RFE")
 rfe_variables <- as.data.frame(rfe_local$variables)
 
 # save to csv
-write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables.csv", row.names = FALSE)
+# write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables.csv", row.names = FALSE)
 
 
 ### Learning Vector Quantization algorithm (LVQ) ###
@@ -380,12 +382,88 @@ lvq_sorted <- lvq_sorted[order(-lvq_sorted$X1),]
 print(lvq_sorted)
 
 # save to csv
-write.csv(lvq_sorted,"~/Desktop/MASTERS/Bitcoin/lvq_sorted_variables.csv", row.names = FALSE)
+# write.csv(lvq_sorted,"~/Desktop/MASTERS/Bitcoin/lvq_sorted_variables.csv", row.names = FALSE)
 
 
 
+### Remove highly Correlates Features with Spearman Correlation ###
 
 
+## RFE 16 features
+
+rfe_features <- c("class", "Local_2", "Local_53", "Local_3", "Local_55", "Local_71", "Local_73",
+                  "Local_8", "Local_80", "Local_47", "Local_41", "Local_72", "Local_49",
+                  "Local_52", "Local_43", "Local_18", "Local_58")
+
+df_rfe <- train_local[, rfe_features]
+
+# Spearman Correlation
+spearman_cor_rfe = round(cor(df_rfe %>% select(!class), method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor_rfe, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of RFE features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+rfe_to_remove <- findCorrelation(spearman_cor_rfe, cutoff = 0.9, names=TRUE)
+
+df_rfe <- df_rfe %>% select(!(rfe_to_remove))
+# df_rfe[, (names(df_rfe) %in% rfe_to_remove)]  # other way
+
+# save to csv
+write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/rfe_features.csv", row.names = FALSE)
+
+
+## LVQ 20 features
+
+lvq_features <- c("class", "Local_53", "Local_55", "Local_90", "Local_60", "Local_66", "Local_29", 
+                  "Local_23", "Local_5", "Local_14", "Local_41", "Local_47", "Local_89",
+                  "Local_49", "Local_43", "Local_31", "Local_25", "Local_18", "Local_91",
+                  "Local_30", "Local_24")
+
+df_lvq <- train_local[, lvq_features]
+
+# Spearman Correlation
+spearman_cor_lvq = round(cor(df_lvq %>% select(!class), method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor_lvq, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of LVQ features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+lvq_to_remove <- findCorrelation(spearman_cor_lvq, cutoff = 0.9, names=TRUE)
+
+df_lvq <- df_lvq %>% select(!(lvq_to_remove))
+
+# save to csv
+write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/lvq_features.csv", row.names = FALSE)
+
+
+## Autoencoder 20 features
+
+ae_features <- read.csv("Bitcoin/ae_results/ae_20features_500epoch.csv")
+
+# Spearman Correlation
+spearman_cor = round(cor(ae_features, method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of Autoencoder features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+ae_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE)
+
+# no highly correlated features to remove
+# we use the same df
 
 
 
