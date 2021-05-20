@@ -139,7 +139,7 @@ auc(roc_rfe_test)
 
 
 
-# Fit Logistic Regression to LVQ data
+# Fit Logistic Regression to LVQ data 10 features (20 original features)
 
 # Data Preprocessing
 # remove class 3 from the LVQ df
@@ -232,6 +232,103 @@ ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
   labs(color = "")
 auc(roc_lvq_test)
 # Area under the curve:0.6885
+
+
+
+# Fit Logistic Regression to LVQ data 14 features (30 original features)
+
+# Data Preprocessing
+# remove class 3 from the LVQ df
+lvq_train_14 <-
+  df_lvq_30 %>% 
+  filter(class != 3)
+
+# relevel to two factor levels instead of three
+lvq_train_14$class <- factor(lvq_train_14$class, levels = c(1,2))
+
+# transform Validation data into the same shape as train data (from 'Feature_engineering.R')
+valid_lvq_14 <- valid_local[, lvq_features_30]
+valid_lvq_14 <- valid_lvq_14 %>% select(!(lvq_to_remove_30))
+
+# remove class 3 from the LVQ df
+lvq_validation_14 <-
+  valid_lvq_14 %>% 
+  filter(class != 3)
+
+# relevel to two factor levels instead of three
+lvq_validation_14$class <- factor(lvq_validation_14$class, levels = c(1,2))
+
+# split rfe_validation df into predictor and outcome variables
+lvq_validation_features_14 <- lvq_validation_14 %>% select(-class) # predictor variables
+lvq_validation_outcome_14 <- lvq_validation_14 %>% select(class)
+
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_lvq_14 <- glm(class ~ ., data=lvq_train_14, family=binomial)
+
+summary(glm_lvq_14)
+
+# access coefficients
+summary(glm_lvq_14)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+lvq_glm_probs_14 <- predict(glm_lvq_14, newdata=lvq_validation_features_14, type="response")
+
+plot(lvq_glm_probs_14)
+
+# first 10 probabilities for class 2
+lvq_glm_probs_14[1:10]
+
+contrasts(lvq_train_14$class)
+# the contrasts() function indicates that R has created a dummy variable
+# with 1 for class 2 and 0 for class 1.
+#   2
+# 1 0
+# 2 1
+
+# In order to make a predictions we must convert these predicted probabilities into class labels
+# assign class 2 to all probabilities with greater or more 0.5
+lvq_glm_preds_14 = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+lvq_glm_preds_14[lvq_glm_probs_14 >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+
+# set levels for predictions
+lvq_glm_preds_14 <- as.factor(lvq_glm_preds_14)
+
+# Classification Matrix
+conf_matrix_lvq_14 <- confusionMatrix(lvq_glm_preds_14, lvq_validation_outcome_14$class, positive = "1")
+conf_matrix_lvq_14
+
+# Confusion matrix summary
+conf_matrix_lvq_14$byClass
+
+# glm model evaluation on Validation data
+lvq_glm_evaluation_14 <- data.frame(conf_matrix_lvq_14$byClass)
+lvq_glm_evaluation_14
+
+
+# AUC/ROC
+
+# ROC Train
+fit_lvq_14 <- fitted(glm_lvq_14)
+roc_lvq_train_14 <- roc(lvq_train_14$class, fit_lvq_14)
+ggroc(roc_lvq_train_14)
+auc(roc_lvq_train_14)
+# Area under the curve:
+
+# ROC Test
+roc_lvq_test_14 <- roc(lvq_validation_outcome_14$class, lvq_glm_preds_14)
+ggroc(list(train=roc_lvq_train_14, test=roc_lvq_test_14), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with 14 LVQ features") +
+  labs(color = "")
+auc(roc_lvq_test_14)
+# Area under the curve:
+
 
 
 # Fit Logistic Regression to Autoencoder data

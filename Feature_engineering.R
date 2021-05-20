@@ -471,7 +471,7 @@ lvq_to_remove_30 <- findCorrelation(spearman_cor_lvq_30, cutoff = 0.9, names=TRU
 df_lvq_30 <- df_lvq_30 %>% select(!(lvq_to_remove_30))
 
 # save to csv
-write.csv(df_lvq_30,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/30_original_lvq_features.csv", row.names = FALSE)
+# write.csv(df_lvq_30,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/30_original_lvq_features.csv", row.names = FALSE)
 
 
 
