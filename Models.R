@@ -234,5 +234,8 @@ auc(roc_lvq_test)
 # Area under the curve:0.6885
 
 
+# Fit Logistic Regression to Autoencoder data
+
+
 
 

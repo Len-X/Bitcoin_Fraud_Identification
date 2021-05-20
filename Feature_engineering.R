@@ -445,6 +445,37 @@ df_lvq <- df_lvq %>% select(!(lvq_to_remove))
 # write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/lvq_features.csv", row.names = FALSE)
 
 
+## LVQ 30 features
+
+lvq_features_30 <- c("class", "Local_53", "Local_55", "Local_90", "Local_60", "Local_66", "Local_29", 
+                  "Local_23", "Local_5", "Local_14", "Local_41", "Local_47", "Local_89",
+                  "Local_49", "Local_43", "Local_31", "Local_25", "Local_18", "Local_91",
+                  "Local_30", "Local_24", "Local_10", "Local_54", "Local_84", "Local_4",
+                  "Local_6", "Local_78", "Local_42", "Local_48", "Local_83", "Local_52")
+
+df_lvq_30 <- train_local[, lvq_features_30]
+
+# Spearman Correlation
+spearman_cor_lvq_30 = round(cor(df_lvq_30 %>% select(!class), method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor_lvq_30, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of 30 LVQ features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+lvq_to_remove_30 <- findCorrelation(spearman_cor_lvq_30, cutoff = 0.9, names=TRUE)
+
+df_lvq_30 <- df_lvq_30 %>% select(!(lvq_to_remove_30))
+
+# save to csv
+write.csv(df_lvq_30,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/30_original_lvq_features.csv", row.names = FALSE)
+
+
+
+
 ## Autoencoder 20 features
 
 ae_features <- read.csv("Bitcoin/ae_results/ae_20features_500epoch.csv")
