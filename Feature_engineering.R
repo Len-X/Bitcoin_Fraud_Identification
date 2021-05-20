@@ -414,7 +414,7 @@ df_rfe <- df_rfe %>% select(!(rfe_to_remove))
 # df_rfe[, (names(df_rfe) %in% rfe_to_remove)]  # other way
 
 # save to csv
-write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/rfe_features.csv", row.names = FALSE)
+# write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/rfe_features.csv", row.names = FALSE)
 
 
 ## LVQ 20 features
@@ -442,7 +442,7 @@ lvq_to_remove <- findCorrelation(spearman_cor_lvq, cutoff = 0.9, names=TRUE)
 df_lvq <- df_lvq %>% select(!(lvq_to_remove))
 
 # save to csv
-write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/lvq_features.csv", row.names = FALSE)
+# write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/lvq_features.csv", row.names = FALSE)
 
 
 ## Autoencoder 20 features
