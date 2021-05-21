@@ -177,16 +177,20 @@ suppressPackageStartupMessages(library(keras))
 
 
 # set training data as matrix
-x_train_local <- as.matrix(train_local[, 4:96])
+x_train_local <- train_local %>% 
+  filter(class != 3) %>% 
+  select(4:96)
+x_train_local <- as.matrix(x_train_local)
+
 
 set.seed(2021)
 
 # set model
 model <- keras_model_sequential()
 model %>%
-  layer_dense(units = 55, activation = "tanh", input_shape = ncol(x_train_local)) %>%
-  layer_dense(units = 16, activation = "tanh", name = "bottleneck") %>%
-  layer_dense(units = 55, activation = "tanh") %>%
+  layer_dense(units = 60, activation = "tanh", input_shape = ncol(x_train_local)) %>%
+  layer_dense(units = 20, activation = "tanh", name = "bottleneck") %>%
+  layer_dense(units = 60, activation = "tanh") %>%
   layer_dense(units = ncol(x_train_local))
 
 # view model layers
@@ -203,7 +207,7 @@ model %>% compile(
 model %>% fit(
   x = x_train_local, 
   y = x_train_local, 
-  epochs = 500,  # try 100, 500, 1000
+  epochs = 1000,  # try 100, 500, 1000
   verbose = 1
 )
 
@@ -211,6 +215,9 @@ model %>% fit(
 # 20 features: 500 epoch - loss: 0.02665084
 # 16 features: 100 epoch - loss: 0.06579638
 # 16 features: 500 epoch - loss: 0.03933172
+# NEW
+# 20 features: 500 epoch - loss: 0.04115077
+# 20 features: 1000 epoch - loss: 0.03363048 
 
 
 # evaluate the performance of the model
@@ -222,8 +229,16 @@ intermediate_layer_model <- keras_model(inputs = model$input, outputs = get_laye
 intermediate_output <- predict(intermediate_layer_model, x_train_local)
 intermediate_output
 
-# save to csv AE hidden layer output
-write.csv(intermediate_output, "ae_16features_500epoch.csv", row.names = FALSE)
+# take an original train class
+df_class <- train_local %>% 
+  filter(class != 3) %>% 
+  select(2)
+
+# combine class and AE-derived features
+df_ae <- cbind(df_class, intermediate_output)
+
+# save to csv combined AE hidden layer output
+write.csv(df_ae, "ae_20_variables_1000epoch.csv", row.names = FALSE)
 
 
 ### Autoencoder with H2O
