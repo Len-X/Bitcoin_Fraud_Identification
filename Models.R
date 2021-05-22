@@ -16,9 +16,12 @@ library(pROC)
 # Data Preprocessing
 # remove class 3 from the Train data
 x_train <-
-  train_local %>% 
-  filter(class != 3) %>%
-  select(-c(txId, TimeStep))
+  df_lf 
+# %>%    
+  ## use df_lf with removed highly correlated features (from Feature-engineering.R)
+  ## or train_local for all local features
+#  filter(class != 3) %>% 
+#  select(-c(txId, TimeStep))
 
 # relevel to two factor levels instead of three
 x_train$class <- factor(x_train$class, levels = c(1,2))
@@ -83,6 +86,7 @@ lf_glm_evaluation
 
 # False Positive Rate
 fp_rate <- 3057 / (3057+4904); fp_rate
+1189 / (1189+6772)
 
 
 # AUC/ROC
@@ -92,7 +96,7 @@ fit_lf <- fitted(glm_lf)
 roc_lf_train <- roc(x_train$class, fit_lf)
 ggroc(roc_lf_train)
 auc(roc_lf_train)
-# Area under the curve: 0.8373
+# Area under the curve: 0.8373, 0.5165
 
 # re-run:
 lf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
@@ -104,15 +108,23 @@ ggroc(list(train=roc_lf_train, test=roc_lf_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with all Local features") +
   labs(color = "")
 auc(roc_lf_test)
-# Area under the curve: 0.729
+# Area under the curve: 0.729, 0.4682
 
 
 
 # Fit Logistic Regression to RFE data
 
-# remove class 3 from the RFE df
+## RFE 16 features
+
+rfe_features <- c("class", "Local_2", "Local_53", "Local_3", "Local_55", "Local_71", "Local_73",
+                  "Local_8", "Local_80", "Local_47", "Local_41", "Local_72", "Local_49",
+                  "Local_52", "Local_43", "Local_18", "Local_58")
+
+df_rfe <- train_local[, rfe_features]
+
+# remove class 3 from the RFE df with correlated features removed
 rfe_train <-
-  df_rfe %>% 
+  df_rfe %>%    ## run 'Feature_engineering.R' to remove highly correlated features!!!
   filter(class != 3)
 
 # relevel to two factor levels instead of three
@@ -120,7 +132,7 @@ rfe_train$class <- factor(rfe_train$class, levels = c(1,2))
   
 # transform Validation data into the same shape as train data (from 'Feature_engineering.R')
 valid_rfe <- valid_local[, rfe_features]
-valid_rfe <- valid_rfe %>% select(!(rfe_to_remove))
+# valid_rfe <- valid_rfe %>% select(!(rfe_to_remove))
 
 # remove class 3 from the RFE df
 rfe_validation <-
@@ -155,15 +167,7 @@ plot(rfe_glm_probs)
 # first 10 probabilities for class 2
 rfe_glm_probs[1:10]
 
-contrasts(rfe_train$class)
-# the contrasts() function indicates that R has created a dummy variable
-# with 1 for class 2 and 0 for class 1.
-#   2
-# 1 0
-# 2 1
-
-# In order to make a predictions we must convert these predicted probabilities into class labels
-# assign class 2 to all probabilities with greater or more
+# assign class 2 to all probabilities with greater or more 0.5
 rfe_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
 rfe_glm_preds[rfe_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
 # for which the predicted probability of class 2 exceeds 0.5
@@ -173,19 +177,19 @@ rfe_glm_preds[rfe_glm_probs >.5 ] = 2 # transforms to class "2" all of the eleme
 classif_matrix <- table(rfe_glm_preds, rfe_validation_outcome$class)
 classif_matrix
 
-# rfe_glm_preds    1    2
-#             1   10   28
-#             2 1028 7933
+# rfe_glm_preds    1    2          1    2
+#             1   10   28     1   10   78
+#             2 1028 7933     2 1028 7883
 
 # set levels for predictions
 rfe_glm_preds <- as.factor(rfe_glm_preds)
+# false positive rate
+28 / (28+7933)
+78 / (78+7883)
 
 # Validation Metrics
 conf_matrix_rfe <- confusionMatrix(rfe_glm_preds, rfe_validation_outcome$class, positive = "1")
 conf_matrix_rfe
-
-# Confusion matrix summary
-conf_matrix_rfe$byClass
 
 # check evaluations
 
@@ -205,7 +209,7 @@ precision_rfe <- precision(data = rfe_glm_preds, reference = rfe_validation_outc
 precision_rfe
 # [1] 0.2631579
 
-# False positive rate:  1 − specificity = FP / (FP + TN)
+# Detection Prevalence:  1 − specificity
 1-specificity(classif_matrix)
 # [1] 0.003517146
 
@@ -224,21 +228,35 @@ fit_rfe <- fitted(glm_rfe)
 roc_rfe_train <- roc(rfe_train$class, fit_rfe)
 ggroc(roc_rfe_train)
 auc(roc_rfe_train)
-# Area under the curve: 0.8952
+# Area under the curve: 0.8952, 0.9028
 
 # ROC Test
+# re-run:
+rfe_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+rfe_glm_preds[rfe_glm_probs >.5 ] = 2
+# ROC plot
 roc_rfe_test <- roc(rfe_validation_outcome$class, rfe_glm_preds)
 ggroc(list(train=roc_rfe_train, test=roc_rfe_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with RFE features") +
   labs(color = "")
 auc(roc_rfe_test)
-# Area under the curve: 0.5031
+# Area under the curve: 0.5031, 0.4999
 
 
 
 # Fit Logistic Regression to LVQ data 10 features (20 original features)
 
 # Data Preprocessing
+
+# for LVQ 20  features. DO NOT RUN FOR COR!
+lvq_features <- c("class", "Local_53", "Local_55", "Local_90", "Local_60", "Local_66", "Local_29", 
+                  "Local_23", "Local_5", "Local_14", "Local_41", "Local_47", "Local_89",
+                  "Local_49", "Local_43", "Local_31", "Local_25", "Local_18", "Local_91",
+                  "Local_30", "Local_24")
+
+df_lvq <- train_local[, lvq_features]
+
+# otherwise run 'Feature_engineering.R' for df_lvq with highly correlated features removed
 # remove class 3 from the LVQ df
 lvq_train <-
   df_lvq %>% 
@@ -249,7 +267,7 @@ lvq_train$class <- factor(lvq_train$class, levels = c(1,2))
 
 # transform Validation data into the same shape as train data (from 'Feature_engineering.R')
 valid_lvq <- valid_local[, lvq_features]
-valid_lvq <- valid_lvq %>% select(!(lvq_to_remove))
+# valid_lvq <- valid_lvq %>% select(!(lvq_to_remove))
 
 # remove class 3 from the LVQ df
 lvq_validation <-
@@ -305,12 +323,18 @@ lvq_glm_preds <- as.factor(lvq_glm_preds)
 conf_matrix_lvq <- confusionMatrix(lvq_glm_preds, lvq_validation_outcome$class, positive = "1")
 conf_matrix_lvq
 
-# Confusion matrix summary
-conf_matrix_lvq$byClass
-
 # glm model evaluation on Validation data
 lvq_glm_evaluation <- data.frame(conf_matrix_lvq$byClass)
 lvq_glm_evaluation
+
+#                Reference
+#  Prediction    1    2
+#           1  879 3741
+#           2  159 4220
+
+# false positive rate
+3741 / (3741+4220)
+
 
 
 # AUC/ROC
@@ -323,6 +347,10 @@ auc(roc_lvq_train)
 # Area under the curve:0.7621
 
 # ROC Test
+# re-run:
+lvq_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+lvq_glm_preds[lvq_glm_probs >.5 ] = 2 
+# ROC plot
 roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_preds)
 ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with LVQ features") +
@@ -433,20 +461,15 @@ auc(roc_lvq_test_14)
 
 # Data Preprocessing
 
-# ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_1000epoch.csv")
-ae_train <- df_ae
+# load AE train
+ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
+# ae_train <- df_ae_train
+ae_train$class<- as.factor(ae_train$class)
 
-# relevel to two factor levels instead of three
-ae_train$class <- factor(ae_train$class, levels = c(1,2))
-
-# remove class 3 from the AE df
-ae_validation <-
-  valid_local %>% 
-  filter(class != 3) %>% 
-  select(class, starts_with("Local"))
-
-# relevel to two factor levels instead of three
-ae_validation$class <- factor(ae_validation$class, levels = c(1,2))
+# load AE validation
+ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
+# ae_validation <- df_ae_valid
+ae_validation$class<- as.factor(ae_validation$class)
 
 # split ae_validation df into predictor and outcome variables
 ae_validation_features <- ae_validation %>% select(-class) # predictor variables
@@ -470,22 +493,12 @@ ae_glm_probs <- predict(glm_ae, newdata=ae_validation_features, type="response")
 
 plot(ae_glm_probs)
 
-# first 10 probabilities for class 2
+# first 10 probabilities
 ae_glm_probs[1:10]
 
-contrasts(ae_train$class)
-# the contrasts() function indicates that R has created a dummy variable
-# with 1 for class 2 and 0 for class 1.
-#   2
-# 1 0
-# 2 1
-
-# In order to make a predictions we must convert these predicted probabilities into class labels
-# assign class 2 to all probabilities with greater or more 0.5
 ae_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
-ae_glm_preds[lvq_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+ae_glm_preds[ae_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
 # for which the predicted probability of class 2 exceeds 0.5
-
 
 # set levels for predictions
 ae_glm_preds <- as.factor(ae_glm_preds)
@@ -494,12 +507,12 @@ ae_glm_preds <- as.factor(ae_glm_preds)
 conf_matrix_ae <- confusionMatrix(ae_glm_preds, ae_validation_outcome$class, positive = "1")
 conf_matrix_ae
 
-# Confusion matrix summary
-conf_matrix_ae$byClass
-
 # glm model evaluation on Validation data
 ae_glm_evaluation <- data.frame(conf_matrix_ae$byClass)
 ae_glm_evaluation
+
+# False positive rate
+75/(75+7886)
 
 
 # AUC/ROC
@@ -509,14 +522,18 @@ fit_ae <- fitted(glm_ae)
 roc_ae_train <- roc(ae_train$class, fit_ae)
 ggroc(roc_ae_train)
 auc(roc_ae_train)
-# Area under the curve: 
+# Area under the curve: 0.935
 
 # ROC Test
+# re-run:
+ae_glm_preds = rep(1, 8999) 
+ae_glm_preds[ae_glm_probs >.5 ] = 2
+# ROC plot
 roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_preds)
 ggroc(list(train=roc_ae_train, test=roc_ae_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with Autoencoder features") +
   labs(color = "")
 auc(roc_ae_test)
-# Area under the curve: 
+# Area under the curve: 0.82
 
 
