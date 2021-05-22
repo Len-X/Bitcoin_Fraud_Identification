@@ -13,6 +13,101 @@ library(pROC)
 
 # Fit Logistic Regression to All Local Features
 
+# Data Preprocessing
+# remove class 3 from the Train data
+x_train <-
+  train_local %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+# relevel to two factor levels instead of three
+x_train$class <- factor(x_train$class, levels = c(1,2))
+
+# remove class 3 from the Validation df
+x_validation <-
+  valid_local %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+# relevel to two factor levels instead of three
+x_validation$class <- factor(x_validation$class, levels = c(1,2))
+
+# split validation df into predictor and outcome variables
+x_validation_features <- x_validation %>% select(-class) # predictor variables
+y_validation_outcome <- x_validation %>% select(class) # outcome
+
+
+## fit the GLM model (lf - Local Features)
+
+set.seed(2021)
+
+glm_lf <- glm(class ~ ., data=x_train, family=binomial)
+
+summary(glm_lf)
+
+# access coefficients
+summary(glm_lf)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+lf_glm_probs <- predict(glm_lf, newdata = x_validation_features, type="response")
+
+plot(lf_glm_probs)
+
+# first 10 probabilities for class 2
+lf_glm_probs[1:10]
+
+contrasts(x_train$class)
+# with 1 for class 2 and 0 for class 1.
+
+# In order to make a predictions we must convert these predicted probabilities into class labels
+lf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+lf_glm_preds[lf_glm_probs >.5 ] = 2 
+# transforms to class "2" all of the elements with predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+lf_glm_preds <- as.factor(lf_glm_preds)
+
+# Classification Matrix
+conf_matrix_lf <- confusionMatrix(lf_glm_preds, y_validation_outcome$class, positive = "1")
+conf_matrix_lf
+
+# Confusion matrix summary on Validation data
+lf_glm_evaluation <- data.frame(conf_matrix_lf$byClass)
+lf_glm_evaluation
+
+#           Reference
+# Prediction    1    2
+#          1  874 3057
+#          2  164 4904
+
+# False Positive Rate
+fp_rate <- 3057 / (3057+4904); fp_rate
+
+
+# AUC/ROC
+
+# ROC Train
+fit_lf <- fitted(glm_lf)
+roc_lf_train <- roc(x_train$class, fit_lf)
+ggroc(roc_lf_train)
+auc(roc_lf_train)
+# Area under the curve: 0.8373
+
+# re-run:
+lf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+lf_glm_preds[lf_glm_probs >.5 ] = 2 
+# ROC Test
+roc_lf_test <- roc(y_validation_outcome$class, lf_glm_preds)
+# ROC plot
+ggroc(list(train=roc_lf_train, test=roc_lf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with all Local features") +
+  labs(color = "")
+auc(roc_lf_test)
+# Area under the curve: 0.729
+
+
+
 # Fit Logistic Regression to RFE data
 
 # remove class 3 from the RFE df

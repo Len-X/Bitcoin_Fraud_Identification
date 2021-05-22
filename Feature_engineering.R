@@ -453,6 +453,26 @@ print(lvq_sorted)
 
 ### Remove highly Correlates Features with Spearman Correlation ###
 
+# All Local Features
+
+train_local_all <-
+  train_local %>% 
+  filter(class != 3) %>% 
+  select(class, starts_with("Local"))
+
+spearman_cor_local = round(cor(train_local_all %>% select(!class), method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor_local, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of Local features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features
+df_lf <- train_local_all %>% select(!(lf_to_remove))
+
 
 ## RFE 16 features
 
