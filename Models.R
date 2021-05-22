@@ -11,6 +11,8 @@ library(pROC)
 
 ### Logistic Regression ###
 
+# Fit Logistic Regression to All Local Features
+
 # Fit Logistic Regression to RFE data
 
 # remove class 3 from the RFE df
@@ -331,8 +333,95 @@ auc(roc_lvq_test_14)
 
 
 
-# Fit Logistic Regression to Autoencoder data
+## Fit Logistic Regression to Autoencoder data ##
 
 
+# Data Preprocessing
+
+# ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_1000epoch.csv")
+ae_train <- df_ae
+
+# relevel to two factor levels instead of three
+ae_train$class <- factor(ae_train$class, levels = c(1,2))
+
+# remove class 3 from the AE df
+ae_validation <-
+  valid_local %>% 
+  filter(class != 3) %>% 
+  select(class, starts_with("Local"))
+
+# relevel to two factor levels instead of three
+ae_validation$class <- factor(ae_validation$class, levels = c(1,2))
+
+# split ae_validation df into predictor and outcome variables
+ae_validation_features <- ae_validation %>% select(-class) # predictor variables
+ae_validation_outcome <- ae_validation %>% select(class)
+
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_ae <- glm(class ~ ., data=ae_train, family=binomial)
+
+summary(glm_ae)
+
+# access coefficients
+summary(glm_ae)$coef
+# The smallest p-value here is associated with: Local_53, Local_18 and Local_52
+
+# make predictions
+ae_glm_probs <- predict(glm_ae, newdata=ae_validation_features, type="response")
+
+plot(ae_glm_probs)
+
+# first 10 probabilities for class 2
+ae_glm_probs[1:10]
+
+contrasts(ae_train$class)
+# the contrasts() function indicates that R has created a dummy variable
+# with 1 for class 2 and 0 for class 1.
+#   2
+# 1 0
+# 2 1
+
+# In order to make a predictions we must convert these predicted probabilities into class labels
+# assign class 2 to all probabilities with greater or more 0.5
+ae_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+ae_glm_preds[lvq_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+
+# set levels for predictions
+ae_glm_preds <- as.factor(ae_glm_preds)
+
+# Classification Matrix
+conf_matrix_ae <- confusionMatrix(ae_glm_preds, ae_validation_outcome$class, positive = "1")
+conf_matrix_ae
+
+# Confusion matrix summary
+conf_matrix_ae$byClass
+
+# glm model evaluation on Validation data
+ae_glm_evaluation <- data.frame(conf_matrix_ae$byClass)
+ae_glm_evaluation
+
+
+# AUC/ROC
+
+# ROC Train
+fit_ae <- fitted(glm_ae)
+roc_ae_train <- roc(ae_train$class, fit_ae)
+ggroc(roc_ae_train)
+auc(roc_ae_train)
+# Area under the curve: 
+
+# ROC Test
+roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_preds)
+ggroc(list(train=roc_ae_train, test=roc_ae_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Autoencoder features") +
+  labs(color = "")
+auc(roc_ae_test)
+# Area under the curve: 
 
 

@@ -3,6 +3,7 @@
 # Install necessary packages
 # install.packages("ggcorrplot")
 # install.packages("Boruta")
+# install.packages('hydroGOF')
 
 # Load libraries
 library(tidyverse)
@@ -12,6 +13,8 @@ library(viridisLite)
 library(Boruta)
 library(caret)
 library(h2o)
+library(pROC)
+library(hydroGOF) # for mse()
 
 
 # load full df
@@ -24,6 +27,7 @@ attach(df)
 # convert class "unknown" to 3
 levels(df$class) <- sub("unknown", 3, levels(df$class))
 
+# workaround
 # df$class[df$class == "unknown"] <- 3
 # df$class <- as.numeric(factor(df$class))
 # df$class <- as.factor(df$class)
@@ -179,8 +183,28 @@ suppressPackageStartupMessages(library(keras))
 # set training data as matrix
 x_train_local <- train_local %>% 
   filter(class != 3) %>% 
-  select(4:96)
-x_train_local <- as.matrix(x_train_local)
+  select(4:96) %>%
+  as.matrix()
+# x_train_local <- as.matrix(x_train_local)
+
+# relevel to two factor levels instead of three
+df_train_local <- train_local %>% 
+  filter(class != 3)
+df_train_local$class <- factor(df_train_local$class, levels = c(1,2))
+
+# set training data as matrix
+x_valid_local <- valid_local %>% 
+  filter(class != 3) %>% 
+  select(4:96) %>%
+  as.matrix()
+
+# relevel to two factor levels instead of three
+df_valid_local <- valid_local %>% 
+  filter(class != 3)
+df_valid_local$class <- factor(df_valid_local$class, levels = c(1,2))
+
+y_train_local <- df_train_local$class
+y_valid_local <- df_valid_local$class
 
 
 set.seed(2021)
@@ -207,7 +231,8 @@ model %>% compile(
 model %>% fit(
   x = x_train_local, 
   y = x_train_local, 
-  epochs = 1000,  # try 100, 500, 1000
+  epochs = 500,  # try 100, 500, 1000
+  validation_data = list(x_valid_local, x_valid_local),
   verbose = 1
 )
 
@@ -217,28 +242,53 @@ model %>% fit(
 # 16 features: 500 epoch - loss: 0.03933172
 # NEW
 # 20 features: 500 epoch - loss: 0.04115077
-# 20 features: 1000 epoch - loss: 0.03363048 
+# 20 features: 1000 epoch - loss: 0.03363048
+# train + validation
+# 20 features train: 100 epoch - loss: 0.08468533
+# 20 features validation: 100 epoch - loss: 1.022135
+# 20 features train: 500 epoch - loss: 0.03899754, 0.03601634, 0.04308268, 0.03993318, 0.03441159
+# 20 features validation: 500 epoch - loss: 1.037613, 1.192277, 1.07344, 1.058106, 1.011728
 
 
 # evaluate the performance of the model
-mse_ae <- evaluate(model, x_train_local, x_train_local)
-mse_ae
+mse_ae_train <- evaluate(model, x_train_local, x_train_local)
+mse_ae_train
+
+mse_ae_valid <- evaluate(model, x_valid_local, x_valid_local)
+mse_ae_valid
 
 # extract the bottleneck layer
 intermediate_layer_model <- keras_model(inputs = model$input, outputs = get_layer(model, "bottleneck")$output)
-intermediate_output <- predict(intermediate_layer_model, x_train_local)
-intermediate_output
+# train prediction
+intermediate_output_train <- predict(intermediate_layer_model, x_train_local)
+intermediate_output_train
+# validation prediction
+intermediate_output_valid <- predict(intermediate_layer_model, x_valid_local)
+intermediate_output_valid
 
+# combine resulted AE features with class
 # take an original train class
-df_class <- train_local %>% 
+df_class1 <- train_local %>% 
   filter(class != 3) %>% 
   select(2)
 
-# combine class and AE-derived features
-df_ae <- cbind(df_class, intermediate_output)
+df_class2 <- valid_local %>% 
+  filter(class != 3) %>% 
+  select(2)
+
+# relevel to two factor levels instead of three
+df_class1$class <- factor(df_class1$class, levels = c(1,2))
+df_class2$class <- factor(df_class2$class, levels = c(1,2))
+
+# combine class and AE-derived train features
+df_ae_train <- cbind(df_class1, intermediate_output_train)
+# combine class and AE-derived validation features
+df_ae_valid <- cbind(df_class2, intermediate_output_valid)
 
 # save to csv combined AE hidden layer output
-write.csv(df_ae, "ae_20_variables_1000epoch.csv", row.names = FALSE)
+write.csv(df_ae_train, "ae_20_variables_train.csv", row.names = FALSE)
+write.csv(df_ae_valid, "ae_20_variables_valid.csv", row.names = FALSE)
+
 
 
 ### Autoencoder with H2O
