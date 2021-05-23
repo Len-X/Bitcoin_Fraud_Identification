@@ -1,0 +1,261 @@
+# 05.23.2021
+
+### Random Forest ###
+
+# Load libraries
+library(tidyverse)
+library(ggplot2)
+library(ggcorrplot)
+library(randomForest)
+library(caret)
+library(pROC)
+
+### Baseline Model ###
+
+# Using All Local Features #
+
+set.seed(2021)
+
+# train / validation
+train_lf <- train_local %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+## use df_lf with removed highly correlated features (from Feature-engineering.R)
+# train_lf <- df_lf
+
+validation_lf <-
+  valid_local %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+# relevel to two factor levels instead of three
+train_lf$class <- factor(train_lf$class, levels = c(1,2))
+validation_lf$class <- factor(validation_lf$class, levels = c(1,2))
+
+validation_lf_features <- validation_lf %>% select(-class) # features
+
+# fit the model
+rand_forest_lf <- randomForest(class~., data = train_lf, mtry = 9, importance =TRUE)
+rand_forest_lf
+
+# variable importances for an object created by randomForest
+rf_var_imp_lf <- data.frame(importance(rand_forest_lf))
+varImpPlot(rand_forest_lf)
+
+preds_rand_forest_lf <- predict(rand_forest_lf, newdata = validation_lf_features)
+
+# Classification Matrix
+conf_matrix_lf <- confusionMatrix(validation_lf$class, preds_rand_forest_lf, positive = "1")
+conf_matrix_lf
+
+lf_rf_evaluation <- data.frame(conf_matrix_lf$byClass)
+lf_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  912  126
+#             2   24 7937
+
+# false positive rate
+126 / (126+7937)
+
+# ROC Train
+preds_rand_forest_lf_roc <- predict(rand_forest_lf, 
+                                    newdata = validation_lf_features, 
+                                    type="prob")
+roc_rf_lf_train <- roc(train_lf$class, rand_forest_lf$votes[,2])
+ggroc(roc_rf_lf_train)
+auc(roc_rf_lf_train)
+# 0.9975, 0.9978
+
+# ROC Test
+roc_rf_lf_test <- roc(validation_lf$class, preds_rand_forest_lf_roc[,2])
+ggroc(list(train=roc_rf_lf_train, test=roc_rf_lf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with All Local features") +
+  labs(color = "")
+auc(roc_rf_lf_test)
+# 0.9888, 0.9885
+
+
+
+# Using RFE Features #
+
+set.seed(2021)
+
+## use df_rfe with removed highly correlated features (from Feature-engineering.R)
+
+# load RFE train (10 variables)
+train_rfe <- df_rfe %>%
+  filter(class != 3)
+# relevel to two factor levels instead of three
+train_rfe$class <- factor(train_lf$class, levels = c(1,2))
+
+# use same validation
+dim(validation_lf)
+dim(validation_lf_features)
+
+# fit the model
+rand_forest_rfe <- randomForest(class~., data = train_rfe, mtry = 3, importance =TRUE)
+# mtry = sqrt(ncol(train_rfe)-1) = √p = 3 (rounded down)
+rand_forest_rfe
+
+# variable importances for an object created by randomForest
+rf_var_imp_rfe <- data.frame(importance(rand_forest_rfe))
+varImpPlot(rand_forest_rfe)
+
+preds_rand_forest_rfe <- predict(rand_forest_rfe, newdata = validation_lf_features)
+
+# Classification Matrix
+conf_matrix_rfe <- confusionMatrix(validation_lf$class, preds_rand_forest_rfe, positive = "1")
+conf_matrix_rfe
+
+rfe_rf_evaluation <- data.frame(conf_matrix_rfe$byClass)
+rfe_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  793  245
+#             2   28 7933
+
+# false positive rate
+245 / (245+7933)
+
+# ROC Train
+preds_rand_forest_rfe_roc <- predict(rand_forest_rfe, 
+                                    newdata = validation_lf_features, 
+                                    type="prob")
+roc_rf_rfe_train <- roc(train_rfe$class, rand_forest_rfe$votes[,2])
+ggroc(roc_rf_rfe_train)
+auc(roc_rf_rfe_train)
+# 0.9972
+
+# ROC Test
+roc_rf_rfe_test <- roc(validation_lf$class, preds_rand_forest_rfe_roc[,2])
+ggroc(list(train=roc_rf_rfe_train, test=roc_rf_rfe_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with RFE features") +
+  labs(color = "")
+auc(roc_rf_rfe_test)
+# 0.9823
+
+
+
+# Using LVQ Features #
+
+set.seed(2021)
+
+## use df_lvq with removed highly correlated features (from Feature-engineering.R)
+
+# load LVQ train (9 variables)
+train_lvq <- df_lvq %>%
+  filter(class != 3)
+# relevel to two factor levels instead of three
+train_lvq$class <- factor(train_lvq$class, levels = c(1,2))
+
+# use same validation
+dim(validation_lf)
+dim(validation_lf_features)
+
+# fit the model
+rand_forest_lvq <- randomForest(class~., data = train_lvq, mtry = 3, importance =TRUE)
+# mtry = sqrt(ncol(train_lvq)-1) = √p = 3 (rounded down)
+rand_forest_lvq
+
+# variable importances for an object created by randomForest
+rf_var_imp_lvq <- data.frame(importance(rand_forest_lvq))
+varImpPlot(rand_forest_lvq)
+
+preds_rand_forest_lvq <- predict(rand_forest_lvq, newdata = validation_lf_features)
+
+# Classification Matrix
+conf_matrix_lvq <- confusionMatrix(validation_lf$class, preds_rand_forest_lvq, positive = "1")
+conf_matrix_lvq
+
+lvq_rf_evaluation <- data.frame(conf_matrix_lvq$byClass)
+lvq_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  936  102
+#             2   87 7874
+
+# false positive rate
+102 / (102+7874)
+
+# ROC Train
+preds_rand_forest_lvq_roc <- predict(rand_forest_lvq, 
+                                     newdata = validation_lf_features, 
+                                     type="prob")
+roc_rf_lvq_train <- roc(train_lvq$class, rand_forest_lvq$votes[,2])
+ggroc(roc_rf_lvq_train)
+auc(roc_rf_lvq_train)
+# 0.9916
+
+# ROC Test
+roc_rf_lvq_test <- roc(validation_lf$class, preds_rand_forest_lvq_roc[,2])
+ggroc(list(train=roc_rf_lvq_train, test=roc_rf_lvq_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with LVQ features") +
+  labs(color = "")
+auc(roc_rf_lvq_test)
+# 0.9861
+
+
+
+# Using Autoencoder Features #
+
+set.seed(2021)
+
+# load AE train
+ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
+ae_train$class<- as.factor(ae_train$class)
+
+# load AE validation
+ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
+ae_validation$class<- as.factor(ae_validation$class)
+
+ae_validation_features <- ae_validation %>% select(-class) # predictor variables
+
+# fit the model
+rand_forest_ae <- randomForest(class~., data = ae_train, mtry = 4, importance =TRUE)
+# mtry = sqrt(ncol(ae_train)-1) = √p = 4 (rounded down)
+rand_forest_ae
+
+# variable importances for an object created by randomForest
+rf_var_imp_ae <- data.frame(importance(rand_forest_ae))
+varImpPlot(rand_forest_ae)
+
+preds_rand_forest_ae <- predict(rand_forest_ae, newdata = ae_validation_features)
+
+# Classification Matrix
+conf_matrix_ae <- confusionMatrix(ae_validation$class, preds_rand_forest_ae, positive = "1")
+conf_matrix_ae
+
+ae_rf_evaluation <- data.frame(conf_matrix_ae$byClass)
+ae_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  793  245
+#             2   67 7894
+
+# false positive rate
+245 / (245+7894)
+
+# ROC Train
+preds_rand_forest_ae_roc <- predict(rand_forest_ae, 
+                                    newdata = ae_validation_features, 
+                                    type="prob")
+roc_rf_ae_train <- roc(ae_train$class, rand_forest_ae$votes[,2])
+ggroc(roc_rf_ae_train)
+auc(roc_rf_ae_train)
+# 0.9851
+
+# ROC Test
+roc_rf_ae_test <- roc(ae_validation$class, preds_rand_forest_ae_roc[,2])
+ggroc(list(train=roc_rf_ae_train, test=roc_rf_ae_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with Autoencoder features") +
+  labs(color = "")
+auc(roc_rf_ae_test)
+# 0.9757
+
+

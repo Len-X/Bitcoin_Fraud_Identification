@@ -1,4 +1,6 @@
-# Classification Models   05.15.2021
+# Classification Model   05.15.2021
+
+### Logistic Regression ###
 
 # Load libraries
 library(tidyverse)
@@ -8,8 +10,6 @@ library(caret)
 library(pROC)
 
 ### Baseline Model ###
-
-### Logistic Regression ###
 
 # Fit Logistic Regression to All Local Features
 
