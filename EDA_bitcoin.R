@@ -39,6 +39,9 @@ table(df1$class)
 #    1       2 unknown 
 # 4545   42019  157205 
 
+# fraction of the Illicit transactions:
+(4545 / (4545+42019)) * 100
+# 9.760759%
 
 # plot class frequencies
 ggplot(df1 %>% 
