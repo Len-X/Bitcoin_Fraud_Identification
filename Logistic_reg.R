@@ -15,13 +15,14 @@ library(pROC)
 
 # Data Preprocessing
 # remove class 3 from the Train data
-x_train <-
-  df_lf 
-# %>%    
+# x_train <-
+#   df_lf 
   ## use df_lf with removed highly correlated features (from Feature-engineering.R)
   ## or train_local for all local features
-#  filter(class != 3) %>% 
-#  select(-c(txId, TimeStep))
+x_train <-
+  train_local %>% 
+  filter(class != 3) %>% 
+  select(-c(txId, TimeStep))
 
 # relevel to two factor levels instead of three
 x_train$class <- factor(x_train$class, levels = c(1,2))
@@ -115,7 +116,7 @@ auc(roc_lf_test)
 # Fit Logistic Regression to RFE data
 
 ## RFE 16 features
-
+# DO NOT RUN FOR COR!
 rfe_features <- c("class", "Local_2", "Local_53", "Local_3", "Local_55", "Local_71", "Local_73",
                   "Local_8", "Local_80", "Local_47", "Local_41", "Local_72", "Local_49",
                   "Local_52", "Local_43", "Local_18", "Local_58")
