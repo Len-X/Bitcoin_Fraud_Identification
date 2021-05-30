@@ -95,21 +95,31 @@ bc1 <- boxcox(shitfed_train$Local_15 ~ shitfed_train$Local_90,
               optimize = TRUE, objective.name="Shapiro-Wilk")
 
 
-### Yeo-Johnson Transformation  ###
-
-yeojohnson_obj_1 <- yeojohnson(shitfed_train$Local_1)
-yeojohnson_obj_1
-hist(yeojohnson_obj_1$x.t)
+## Box-Cox Transformation with bestNormalize ##
 
 # check Box-Cox again
 boxcox_obj_1 <- boxcox(shitfed_train$Local_1)
 boxcox_obj_1
 hist(boxcox_obj_1$x.t)
 
+### Yeo-Johnson Transformation  ###
+
+yeojohnson_obj_1 <- yeojohnson(shitfed_train$Local_1)
+yeojohnson_obj_1
+hist(yeojohnson_obj_1$x.t)
+
 # orderNorm Transformation
 orderNorm_obj_1 <- orderNorm(shitfed_train$Local_1)
 orderNorm_obj_1
 hist(orderNorm_obj_1$x.t)   ## BEST METHOD! ##
+
+# Visualiza the results
+par(mfrow = c(2,2))
+MASS::truehist(shitfed_train$Local_1, main = "Original", nbins = 12)
+MASS::truehist(boxcox_obj_1$x.t, main = "Box-Cox transformation", nbins = 12)
+MASS::truehist(yeojohnson_obj_1$x.t, main = "Yeo-Johnson transformation", nbins = 12)
+MASS::truehist(orderNorm_obj_1$x.t, main = "orderNorm transformation", nbins = 12)
+par(mfrow = c(1,1))
 
 # compare all bestNormalize methods on one feature Local_1
 BN_obj <- bestNormalize(shitfed_train$Local_1)
@@ -124,21 +134,58 @@ BN_obj_train_lf
 # efficient method
 transformed_train_lf <- data.frame(predict(BN_obj_train_lf))
 hist(transformed_train_lf$Local_1)
+
 # manual method
 # transformed_train_lf <- c() 
 # for(i in 1:93){
 #   transformed_train_lf <- cbind(transformed_train_lf, BN_obj_train_lf[[i]]$x.t) }
 
+# combine transformed features with true class
+df_class_train <- train_lf %>%
+  select(1)
+
+transformed_train_lf <- cbind(df_class_train, transformed_train_lf)
+
 # save to csv
 # write.csv(transformed_train_lf,"~/Desktop/MASTERS/Bitcoin/transformed_train_local_features.csv", row.names = FALSE)
 
+
+
 # run bestNormalize methods on all Validation variables
-BN_obj_valid_lf <- lapply(shitfed_valid, function(x) bestNormalize(x))
+BN_obj_valid_lf <- lapply(shifted_valid, function(x) bestNormalize(x))
 BN_obj_valid_lf
 
 # transform variables and save the result to df
 # efficient method
 transformed_valid_lf <- data.frame(predict(BN_obj_valid_lf))
+
+# combine transformed features with true class
+df_class_valid <- valid_lf %>%
+  select(1)
+
+transformed_valid_lf <- cbind(df_class_valid, transformed_valid_lf)
+
+# save to csv
+# write.csv(transformed_valid_lf,"~/Desktop/MASTERS/Bitcoin/transformed_valid_local_features.csv", row.names = FALSE)
+
+
+# run bestNormalize methods on all Test variables
+BN_obj_test_lf <- lapply(shifted_test, function(x) bestNormalize(x))
+BN_obj_test_lf
+
+# transform variables and save the result to df
+# efficient method
+transformed_test_lf <- data.frame(predict(BN_obj_test_lf))
+
+# combine transformed features with true class
+df_class_test <- test_lf %>%
+  select(1)
+
+transformed_test_lf <- cbind(df_class_test, transformed_test_lf)
+
+# save to csv
+# write.csv(transformed_test_lf,"~/Desktop/MASTERS/Bitcoin/transformed_test_local_features.csv", row.names = FALSE)
+
 
 
 
