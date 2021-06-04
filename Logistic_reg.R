@@ -651,3 +651,80 @@ df_transf_valid_lf_short <- transf_valid %>% select(!trasf_features_na)
 
 
 
+## Fit Logistic Regression to Transformed data with RFE ##
+
+# Data Preprocessing
+
+## RFE 20 features
+rfe_features <- c("Class", "Local_2",  "Local_55", "Local_49", "Local_8", "Local_58", "Local_90", "Local_67", "Local_31",
+                  "Local_3", "Local_16", "Local_73", "Local_52", "Local_28", "Local_18", "Local_4", "Local_40",
+                  "Local_19", "Local_85", "Local_79", "Local_80")
+
+# subset with transformed down-sampled data
+rfe_train <- down_train_lf[, rfe_features]
+
+# load transformed validation data
+rfe_validation_features <- valid_lf_trans[, rfe_features[2:21]] # predictor variables
+rfe_validation_outcome <- valid_lf_trans %>% select(class) # outcome variable
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_rfe <- glm(Class ~ ., data=rfe_train, family=binomial)
+
+summary(glm_rfe)
+
+# access coefficients
+summary(glm_rfe)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+rfe_glm_probs <- predict(glm_rfe, newdata=rfe_validation_features, type="response")
+
+plot(rfe_glm_probs)
+
+# first 10 probabilities
+rfe_glm_probs[1:10]
+
+rfe_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+rfe_glm_preds[rfe_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+rfe_glm_preds <- as.factor(rfe_glm_preds)
+
+# Classification Matrix
+conf_matrix_rfe <- confusionMatrix(rfe_glm_preds, rfe_validation_outcome$class, positive = "1")
+conf_matrix_rfe
+
+# glm model evaluation on Validation data
+rfe_glm_evaluation <- data.frame(conf_matrix_rfe$byClass)
+rfe_glm_evaluation
+
+#           Reference
+# Prediction    1    2
+#          1  685  475
+#          2  353 7486
+
+# False positive rate
+475/(475+7486)
+
+# AUC/ROC
+
+# ROC Train
+fit_rfe <- fitted(glm_rfe)
+roc_rfe_train <- roc(rfe_train$Class, fit_rfe)
+ggroc(roc_rfe_train)
+auc(roc_rfe_train)
+# Area under the curve: 0.9661
+
+# ROC Test
+roc_rfe_test <- roc(rfe_validation_outcome$class, rfe_glm_probs)
+ggroc(list(train=roc_rfe_train, test=roc_rfe_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Transformed RFE features") +
+  labs(color = "")
+auc(roc_rfe_test)
+# Area under the curve: 0.8352
+
+

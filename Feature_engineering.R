@@ -599,7 +599,7 @@ spearman_cor_local = round(cor(train_local_all %>% select(!Class), method = c("s
 
 spearman_cor_heatmap <- ggcorrplot(spearman_cor_local, type = "full",
                                    lab_size=1, tl.cex=8, tl.srt=90) +
-  ggtitle("Spearman Correlation Matrix of Transformed Local features (with Down-sapling)") +
+  ggtitle("Spearman Correlation Matrix of Transformed Local features (with Down-sampling)") +
   theme(plot.title = element_text(hjust=0.5))
 
 spearman_cor_heatmap
@@ -610,6 +610,38 @@ df_lf_transf <- train_local_all %>% select(!(lf_to_remove))
 df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!(lf_to_remove)) # from Logistic_Reg.R
 
 
+
+### Recursive Feature Elimination (RFE) algorithm ###
+### On Transformed data with Highly Correlated features removed ###
+
+# RFE is in library Caret
+library(caret)
+
+set.seed(2021)
+
+rfe_train_local <- df_lf_transf
+# rfe_train_local <- droplevels(rfe_train_local)
+
+# set 10-fold CV coltrols
+control <- rfeControl(functions=rfFuncs, method="cv", number=5)
+
+rfe_local <- rfe(rfe_train_local[,1:40], 
+                 rfe_train_local[,41], 
+                 sizes=c(2:20), 
+                 rfeControl=control)
+
+rfe_local
+
+# list the chosen features
+predictors(rfe_local)
+# plot the results
+plot(rfe_local, type=c("g", "o"), main="Feature Selection with RFE of Transformed data")
+
+# rfe variables
+rfe_variables <- as.data.frame(rfe_local$variables)
+
+# save to csv
+# write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables_transf.csv", row.names = FALSE)
 
 
 
