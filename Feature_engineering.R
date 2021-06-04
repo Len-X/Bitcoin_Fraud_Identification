@@ -472,6 +472,8 @@ spearman_cor_heatmap
 # remove highly correlated features
 lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features
 df_lf <- train_local_all %>% select(!(lf_to_remove))
+df_lf_valid <- valid_local %>% select(!(lf_to_remove))
+
 
 
 ## RFE 16 features
@@ -481,6 +483,7 @@ rfe_features <- c("class", "Local_2", "Local_53", "Local_3", "Local_55", "Local_
                   "Local_52", "Local_43", "Local_18", "Local_58")
 
 df_rfe <- train_local[, rfe_features]
+df_rfe_valid <- valid_local[, rfe_features]
 
 # Spearman Correlation
 spearman_cor_rfe = round(cor(df_rfe %>% select(!class), method = c("spearman")), 2)
@@ -497,6 +500,7 @@ rfe_to_remove <- findCorrelation(spearman_cor_rfe, cutoff = 0.9, names=TRUE)
 
 df_rfe <- df_rfe %>% select(!(rfe_to_remove))
 # df_rfe[, (names(df_rfe) %in% rfe_to_remove)]  # other way
+df_rfe_valid <- df_rfe_valid %>% select(!(rfe_to_remove))
 
 # save to csv
 # write.csv(df_rfe,"~/Desktop/MASTERS/Bitcoin_Fraud_Identification/Data/rfe_features.csv", row.names = FALSE)
@@ -586,6 +590,10 @@ ae_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE)
 # All Local Features Transformed data
 
 train_local_all <- down_train_lf # directly from "Transformation.R"
+# or load from CSV
+train_local_all <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
+# or with NA features removed! (run Transformation.R)
+train_local_all <- df_trasf_lf_short # from Logistic_Reg.R
 
 spearman_cor_local = round(cor(train_local_all %>% select(!Class), method = c("spearman")), 2)
 
@@ -599,6 +607,7 @@ spearman_cor_heatmap
 # remove highly correlated features
 lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features
 df_lf_transf <- train_local_all %>% select(!(lf_to_remove))
+df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!(lf_to_remove)) # from Logistic_Reg.R
 
 
 

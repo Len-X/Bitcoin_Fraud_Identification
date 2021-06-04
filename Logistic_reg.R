@@ -27,11 +27,18 @@ x_train <-
 # relevel to two factor levels instead of three
 x_train$class <- factor(x_train$class, levels = c(1,2))
 
-# remove class 3 from the Validation df
+# Validation
 x_validation <-
   valid_local %>% 
   filter(class != 3) %>%
   select(-c(txId, TimeStep))
+
+# remove class 3 from the Validation df with Highly Correlated features removed
+# (from Feature-engineering.R)
+# x_validation <-
+#   df_lf_valid %>% 
+#   filter(class != 3) %>%
+#   select(-c(txId, TimeStep))
 
 # relevel to two factor levels instead of three
 x_validation$class <- factor(x_validation$class, levels = c(1,2))
@@ -80,15 +87,20 @@ conf_matrix_lf
 lf_glm_evaluation <- data.frame(conf_matrix_lf$byClass)
 lf_glm_evaluation
 
-#           Reference
+#           Reference           
 # Prediction    1    2
 #          1  874 3057
 #          2  164 4904
 
+# with Highly correlated features removed
+#           Reference
+# Prediction    1    2
+#          1   89 1189
+#          2  949 6772
+
 # False Positive Rate
 fp_rate <- 3057 / (3057+4904); fp_rate
 1189 / (1189+6772)
-
 
 # AUC/ROC
 
@@ -99,14 +111,11 @@ ggroc(roc_lf_train)
 auc(roc_lf_train)
 # Area under the curve: 0.8373, 0.5165
 
-# re-run:
-lf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
-lf_glm_preds[lf_glm_probs >.5 ] = 2 
 # ROC Test
-roc_lf_test <- roc(y_validation_outcome$class, lf_glm_preds)
+roc_lf_test <- roc(y_validation_outcome$class, lf_glm_probs)
 # ROC plot
 ggroc(list(train=roc_lf_train, test=roc_lf_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with all Local features") +
+  ggtitle("ROC of Logistic Regression without Highly Correlated Local features") +
   labs(color = "")
 auc(roc_lf_test)
 # Area under the curve: 0.729, 0.4682
@@ -133,7 +142,7 @@ rfe_train$class <- factor(rfe_train$class, levels = c(1,2))
   
 # transform Validation data into the same shape as train data (from 'Feature_engineering.R')
 valid_rfe <- valid_local[, rfe_features]
-# valid_rfe <- valid_rfe %>% select(!(rfe_to_remove))
+valid_rfe <- valid_rfe %>% select(!(rfe_to_remove))
 
 # remove class 3 from the RFE df
 rfe_validation <-
@@ -221,7 +230,6 @@ F1 <- (2 * ((precision_rfe * recall_rfe) / (precision_rfe + recall_rfe)))
 rfe_glm_evaluation <- data.frame(conf_matrix_rfe$byClass)
 rfe_glm_evaluation
 
-
 # AUC/ROC
 
 # ROC Train
@@ -232,16 +240,12 @@ auc(roc_rfe_train)
 # Area under the curve: 0.8952, 0.9028
 
 # ROC Test
-# re-run:
-rfe_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
-rfe_glm_preds[rfe_glm_probs >.5 ] = 2
-# ROC plot
-roc_rfe_test <- roc(rfe_validation_outcome$class, rfe_glm_preds)
+roc_rfe_test <- roc(rfe_validation_outcome$class, rfe_glm_probs)
 ggroc(list(train=roc_rfe_train, test=roc_rfe_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with RFE features") +
   labs(color = "")
 auc(roc_rfe_test)
-# Area under the curve: 0.5031, 0.4999
+# Area under the curve: 0.8429, 0.4999
 
 
 
@@ -268,7 +272,7 @@ lvq_train$class <- factor(lvq_train$class, levels = c(1,2))
 
 # transform Validation data into the same shape as train data (from 'Feature_engineering.R')
 valid_lvq <- valid_local[, lvq_features]
-# valid_lvq <- valid_lvq %>% select(!(lvq_to_remove))
+valid_lvq <- valid_lvq %>% select(!(lvq_to_remove))
 
 # remove class 3 from the LVQ df
 lvq_validation <-
@@ -336,8 +340,6 @@ lvq_glm_evaluation
 # false positive rate
 3741 / (3741+4220)
 
-
-
 # AUC/ROC
 
 # ROC Train
@@ -348,11 +350,7 @@ auc(roc_lvq_train)
 # Area under the curve:0.7621
 
 # ROC Test
-# re-run:
-lvq_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
-lvq_glm_preds[lvq_glm_probs >.5 ] = 2 
-# ROC plot
-roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_preds)
+roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_probs)
 ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with LVQ features") +
   labs(color = "")
@@ -448,7 +446,7 @@ auc(roc_lvq_train_14)
 # Area under the curve:
 
 # ROC Test
-roc_lvq_test_14 <- roc(lvq_validation_outcome_14$class, lvq_glm_preds_14)
+roc_lvq_test_14 <- roc(lvq_validation_outcome_14$class, lvq_glm_probs_14)
 ggroc(list(train=roc_lvq_train_14, test=roc_lvq_test_14), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with 14 LVQ features") +
   labs(color = "")
@@ -487,7 +485,7 @@ summary(glm_ae)
 
 # access coefficients
 summary(glm_ae)$coef
-# The smallest p-value here is associated with: Local_53, Local_18 and Local_52
+# The smallest p-value here is associated with:
 
 # make predictions
 ae_glm_probs <- predict(glm_ae, newdata=ae_validation_features, type="response")
@@ -512,9 +510,13 @@ conf_matrix_ae
 ae_glm_evaluation <- data.frame(conf_matrix_ae$byClass)
 ae_glm_evaluation
 
+#           Reference
+# Prediction    1    2
+#          1  674   75
+#          2  364 7886
+
 # False positive rate
 75/(75+7886)
-
 
 # AUC/ROC
 
@@ -526,16 +528,12 @@ auc(roc_ae_train)
 # Area under the curve: 0.935
 
 # ROC Test
-# re-run:
-ae_glm_preds = rep(1, 8999) 
-ae_glm_preds[ae_glm_probs >.5 ] = 2
-# ROC plot
-roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_preds)
+roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_probs)
 ggroc(list(train=roc_ae_train, test=roc_ae_test), legacy.axes = TRUE) +
   ggtitle("ROC of Logistic Regression with Autoencoder features") +
   labs(color = "")
 auc(roc_ae_test)
-# Area under the curve: 0.82
+# Area under the curve: 0.8919
 
 
 
@@ -545,13 +543,18 @@ auc(roc_ae_test)
 
 # load Transformed Downsampled train data (All local features)
 # DO NOT run if running with NA features removed!
-down_train <- read.csv("Bitcoin_Fraud_Identification/Data/")
+down_train <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
 down_train$class<- as.factor(down_train$class)
 
-# down_train <- down_train_lf # directly from "Transformation.R"
+down_train <- down_train_lf # directly from "Transformation.R"
 
 ## re-run with NA features removed ##
 # down_train <-  df_trasf_lf_short # from code below 
+
+# OR
+# with Highly Correlated features removed!
+# from Feature_engineering.R!
+down_train <- df_lf_transf 
 
 # load Transformed validation data
 transf_valid <- read.csv("Bitcoin_Fraud_Identification/Data/.csv")
@@ -560,6 +563,10 @@ transf_valid$class<- as.factor(transf_valid$class)
 
 ## re-run with NA features removed ##
 # transf_valid <- df_transf_valid_lf_short
+# OR 
+# with Highly Correlated features removed!
+# transform Validation data into the same shape as train data
+transf_valid <- df_lf_transf_valid # from Feature_engineering.R
 
 # split trasf_valid df into predictor and outcome variables
 transf_validation_features <- transf_valid %>% select(-class) # predictor variables
@@ -606,8 +613,14 @@ transf_glm_evaluation
 #          1  714  402
 #          2  324 7559
 
+#           Reference       # Highly correlated featured removed
+# Prediction    1    2
+#          1  728  422
+#          2  310 7539
+
 # False positive rate
 402/(402+7559)
+422/(422+7539)
 
 # AUC/ROC
 
@@ -616,18 +629,19 @@ fit_transf <- fitted(glm_transf)
 roc_transf_train <- roc(down_train$Class, fit_transf)
 ggroc(roc_transf_train)
 auc(roc_transf_train)
-# Area under the curve: 0.985
+# Area under the curve: 0.985, 0.9745
 
 # ROC Test
 roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
 ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with Transformed Downsampled Local features") +
+  ggtitle("ROC of Logistic Regression with Transformed Downsampled and Highly Correlated Local features removed") +
   labs(color = "")
 auc(roc_transf_test)
-# Area under the curve: 0.8986
+# Area under the curve: 0.8986, 0.9029
 
 
 ## re-run with NA features removed ##
+# use before finding Highly Correlated features
 
 trasf_features_na <- c("Local_5", "Local_14", "Local_82")
 
