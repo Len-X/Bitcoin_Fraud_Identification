@@ -4,6 +4,8 @@
 # install.packages("bestNormalize")
 library(tidyverse)
 library(ggplot2)
+library(caret)
+library(bestNormalize)
 
 
 ### Data Preprocessing ###
@@ -68,8 +70,6 @@ min(shifted_test)  # [1] 0.003394184
 ### Box-Cox Transformation ###
 
 library(MASS)
-library(caret)
-library(bestNormalize)
 
 #estimate a Box–Cox transformation 
 bc_preprocess <- preProcess(shitfed_train, method = "BoxCox")
@@ -188,6 +188,25 @@ transformed_test_lf <- cbind(df_class_test, transformed_test_lf)
 
 
 
+### Sampling of the Imbalanced data ###
 
 
+# Load transformed data
+train_lf_trans <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
+valid_lf_trans <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_valid_local_features.csv")
+
+# set "class" as factor
+train_lf_trans$class <- factor(train_lf_trans$class, levels = c(1,2))
+valid_lf_trans$class <- factor(valid_lf_trans$class, levels = c(1,2))
+
+# Downsapling #
+
+set.seed(2021)
+
+down_train_lf <- downSample(x = train_lf_trans[,-1], y = train_lf_trans$class)
+
+table(down_train_lf$Class)
+
+#    1    2 
+# 2871 2871 
 

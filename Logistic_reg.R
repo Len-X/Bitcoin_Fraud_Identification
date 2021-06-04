@@ -538,3 +538,102 @@ auc(roc_ae_test)
 # Area under the curve: 0.82
 
 
+
+## Fit Logistic Regression to Transformed data (all Local Features) ##
+
+# Data Preprocessing
+
+# load Transformed Downsampled train data (All local features)
+# DO NOT run if running with NA features removed!
+down_train <- read.csv("Bitcoin_Fraud_Identification/Data/")
+down_train$class<- as.factor(down_train$class)
+
+# down_train <- down_train_lf # directly from "Transformation.R"
+
+## re-run with NA features removed ##
+# down_train <-  df_trasf_lf_short # from code below 
+
+# load Transformed validation data
+transf_valid <- read.csv("Bitcoin_Fraud_Identification/Data/.csv")
+transf_valid$class<- as.factor(transf_valid$class)
+# transf_valid <- valid_lf_trans # directly from "Transformation.R"
+
+## re-run with NA features removed ##
+# transf_valid <- df_transf_valid_lf_short
+
+# split trasf_valid df into predictor and outcome variables
+transf_validation_features <- transf_valid %>% select(-class) # predictor variables
+transf_validation_outcome <- transf_valid %>% select(class)
+
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_transf <- glm(Class ~ ., data=down_train, family=binomial)
+
+summary(glm_transf)
+
+# access coefficients
+summary(glm_transf)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
+
+plot(transf_glm_probs)
+
+# first 10 probabilities
+transf_glm_probs[1:10]
+
+transf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+transf_glm_preds[transf_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+transf_glm_preds <- as.factor(transf_glm_preds)
+
+# Classification Matrix
+conf_matrix_transf <- confusionMatrix(transf_glm_preds, transf_validation_outcome$class, positive = "1")
+conf_matrix_transf
+
+# glm model evaluation on Validation data
+transf_glm_evaluation <- data.frame(conf_matrix_transf$byClass)
+transf_glm_evaluation
+
+#            Reference
+# Prediction    1    2
+#          1  714  402
+#          2  324 7559
+
+# False positive rate
+402/(402+7559)
+
+# AUC/ROC
+
+# ROC Train
+fit_transf <- fitted(glm_transf)
+roc_transf_train <- roc(down_train$Class, fit_transf)
+ggroc(roc_transf_train)
+auc(roc_transf_train)
+# Area under the curve: 0.985
+
+# ROC Test
+roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
+ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Transformed Downsampled Local features") +
+  labs(color = "")
+auc(roc_transf_test)
+# Area under the curve: 0.8986
+
+
+## re-run with NA features removed ##
+
+trasf_features_na <- c("Local_5", "Local_14", "Local_82")
+
+df_trasf_lf_short <- down_train_lf %>% select(!trasf_features_na)
+df_transf_valid_lf_short <- transf_valid %>% select(!trasf_features_na)
+
+
+
+
