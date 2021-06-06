@@ -195,18 +195,36 @@ transformed_test_lf <- cbind(df_class_test, transformed_test_lf)
 train_lf_trans <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
 valid_lf_trans <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_valid_local_features.csv")
 
-# set "class" as factor
+# Load Autoencoder features
+train_ae <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
+valid_ae <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
+
+# set "class" as factor for transformed data
 train_lf_trans$class <- factor(train_lf_trans$class, levels = c(1,2))
 valid_lf_trans$class <- factor(valid_lf_trans$class, levels = c(1,2))
+# set "class" as factor for Autoencoder data
+train_ae$class <- factor(train_ae$class, levels = c(1,2))
+valid_ae$class <- factor(valid_ae$class, levels = c(1,2))
 
 # Downsapling #
 
 set.seed(2021)
 
+# transformed data
 down_train_lf <- downSample(x = train_lf_trans[,-1], y = train_lf_trans$class)
 
 table(down_train_lf$Class)
 
 #    1    2 
 # 2871 2871 
+
+# Autoencoder data
+down_train_ae <- downSample(x = train_ae[,-1], y = train_ae$class)
+
+table(down_train_ae$Class)
+
+#    1    2 
+# 2871 2871
+
+
 
