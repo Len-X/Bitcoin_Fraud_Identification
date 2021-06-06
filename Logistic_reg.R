@@ -728,3 +728,86 @@ auc(roc_rfe_test)
 # Area under the curve: 0.8352
 
 
+
+## Fit Logistic Regression to Transformed data with LVQ ##
+
+# Data Preprocessing
+
+# for LVQ top 20 features.
+lvq_features <- c("Class", "Local_55", "Local_90", "Local_49", "Local_31", "Local_18", "Local_91",
+                  "Local_4", "Local_78", "Local_76", "Local_52", "Local_58", "Local_85",
+                  "Local_40", "Local_73", "Local_37", "Local_16", "Local_8", "Local_92",
+                  "Local_80", "Local_67")
+
+lvq_train <- down_train_lf[, lvq_features]
+
+# transform Validation data into the same shape as train data
+lvq_validation_features <- valid_lf_trans[, lvq_features[-1]] # predictor variables
+lvq_validation_outcome <- valid_lf_trans %>% select(class) # outcome
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_lvq <- glm(Class ~ ., data=lvq_train, family=binomial)
+
+summary(glm_lvq)
+
+# access coefficients
+summary(glm_lvq)$coef
+
+# make predictions
+lvq_glm_probs <- predict(glm_lvq, newdata=lvq_validation_features, type="response")
+
+plot(lvq_glm_probs)
+
+# first 10 probabilities for class 2
+lvq_glm_probs[1:10]
+
+contrasts(lvq_train$Class)
+
+# In order to make a predictions we must convert these predicted probabilities into class labels
+# assign class 2 to all probabilities with greater or more 0.5
+lvq_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+lvq_glm_preds[lvq_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+
+# set levels for predictions
+lvq_glm_preds <- as.factor(lvq_glm_preds)
+
+# Classification Matrix
+conf_matrix_lvq <- confusionMatrix(lvq_glm_preds, lvq_validation_outcome$class, positive = "1")
+conf_matrix_lvq
+
+# glm model evaluation on Validation data
+lvq_glm_evaluation <- data.frame(conf_matrix_lvq$byClass)
+lvq_glm_evaluation
+
+#                Reference
+#  Prediction    1    2
+#           1  806  319
+#           2  232 7642
+
+# false positive rate
+319 / (319 + 7642)
+
+# AUC/ROC
+
+# ROC Train
+fit_lvq <- fitted(glm_lvq)
+roc_lvq_train <- roc(lvq_train$Class, fit_lvq)
+ggroc(roc_lvq_train)
+auc(roc_lvq_train)
+# Area under the curve: 0.9603
+
+# ROC Test
+roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_probs)
+ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with transformed LVQ features") +
+  labs(color = "")
+auc(roc_lvq_test)
+# Area under the curve: 0.945
+
+
+

@@ -605,7 +605,7 @@ spearman_cor_heatmap <- ggcorrplot(spearman_cor_local, type = "full",
 spearman_cor_heatmap
 
 # remove highly correlated features
-lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features
+lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features removed
 df_lf_transf <- train_local_all %>% select(!(lf_to_remove))
 df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!(lf_to_remove)) # from Logistic_Reg.R
 
@@ -643,6 +643,46 @@ rfe_variables <- as.data.frame(rfe_local$variables)
 # save to csv
 # write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables_transf.csv", row.names = FALSE)
 
+
+
+### Learning Vector Quantization algorithm (LVQ) ###
+### On Transformed data with Highly Correlated features removed ###
+
+lvq_train_local <- df_lf_transf
+# Since we got a warning (see below), let us remove Local_15 feature
+# lvq_train_local <- df_lf_transf %>% select(!Local_15)
+
+# prepare training scheme
+control_lvq <- trainControl(method="repeatedcv", number=5, repeats=3)
+
+# train the model
+lvq_model <- train(Class ~., data=lvq_train_local, 
+                   method="lvq", 
+                   preProcess="scale", 
+                   trControl=control_lvq)
+lvq_model
+
+# estimate variable importance
+lvq_importance <- varImp(lvq_model, scale=FALSE)
+
+# summarize importance
+# Rank Features By Importance
+print(lvq_importance)
+
+# plot importance
+plot(lvq_importance, main="Feature Selection of Transformed data with LVQ")
+
+# sort all features by rank of importance
+lvq_sorted <- as.data.frame(lvq_importance$importance)
+lvq_sorted <- lvq_sorted[order(-lvq_sorted$X1),]
+print(lvq_sorted)
+
+# save to csv
+# write.csv(lvq_sorted,"~/Desktop/MASTERS/Bitcoin/lvq_sorted_var_transf_DS.csv", row.names = FALSE)
+
+# Warning in preProcess.default(thresh = 0.95, k = 5, freqCut = 19, uniqueCut = 10,  :
+# These variables have zero variances: Local_15
+# Since we have this warning, let us remove Local_15 feature
 
 
 
