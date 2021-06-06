@@ -463,23 +463,29 @@ auc(roc_lvq_test_14)
 # load AE train
 ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
 # ae_train <- df_ae_train
-ae_train$class<- as.factor(ae_train$class)
+ae_train$class <- as.factor(ae_train$class)
+
+# load Down Sampled AE train data (do not run for all AE train observations!)
+# from "transformation.R"
+ae_train <- down_train_ae
 
 # load AE validation
 ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
 # ae_validation <- df_ae_valid
 ae_validation$class<- as.factor(ae_validation$class)
 
+# load Validation AE data from "transformation.R"
+ae_validation <- valid_ae
+
 # split ae_validation df into predictor and outcome variables
 ae_validation_features <- ae_validation %>% select(-class) # predictor variables
 ae_validation_outcome <- ae_validation %>% select(class)
-
 
 ## fit the GLM model
 
 set.seed(2021)
 
-glm_ae <- glm(class ~ ., data=ae_train, family=binomial)
+glm_ae <- glm(Class ~ ., data=ae_train, family=binomial)
 
 summary(glm_ae)
 
@@ -515,25 +521,31 @@ ae_glm_evaluation
 #          1  674   75
 #          2  364 7886
 
+#           Reference
+# Prediction    1    2
+#          1  889 2378
+#          2  149 5583
+
 # False positive rate
-75/(75+7886)
+75 /(75 + 7886)
+2378 /(2378 + 5583)
 
 # AUC/ROC
 
 # ROC Train
 fit_ae <- fitted(glm_ae)
-roc_ae_train <- roc(ae_train$class, fit_ae)
+roc_ae_train <- roc(ae_train$Class, fit_ae)
 ggroc(roc_ae_train)
 auc(roc_ae_train)
-# Area under the curve: 0.935
+# Area under the curve: 0.935, 0.9265
 
 # ROC Test
 roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_probs)
 ggroc(list(train=roc_ae_train, test=roc_ae_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with Autoencoder features") +
+  ggtitle("ROC of Logistic Regression with Down-sampled Autoencoder features") +
   labs(color = "")
 auc(roc_ae_test)
-# Area under the curve: 0.8919
+# Area under the curve: 0.8919, 0.8777
 
 
 
