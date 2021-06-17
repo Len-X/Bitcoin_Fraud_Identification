@@ -259,3 +259,60 @@ auc(roc_rf_ae_test)
 # 0.9757
 
 
+
+
+## Random Forest on Transformed data + DS (all Local Features) ##
+
+# Data Preprocessing
+
+set.seed(2021)
+
+down_train <- down_train_lf # directly from "Transformation.R"
+transf_valid <- valid_lf_trans # directly from "Transformation.R"
+
+validation_lf_features <- transf_valid %>% select(-class) # features
+
+# fit the model
+rand_forest_lf_tr <- randomForest(Class~., data = down_train, mtry = 9, importance =TRUE)
+# mtry = √p = 9 (rounded down)
+rand_forest_lf_tr
+
+# variable importances for an object created by randomForest
+rf_var_imp_lf_tr <- data.frame(importance(rand_forest_lf_tr))
+varImpPlot(rand_forest_lf_tr, main = "Variable Importance plot - Transformed Local features")
+
+preds_rand_forest_lf_tr <- predict(rand_forest_lf_tr, newdata = validation_lf_features)
+
+# Classification Matrix
+conf_matrix_lf_tr <- confusionMatrix(transf_valid$class, preds_rand_forest_lf_tr, positive = "1")
+conf_matrix_lf_tr
+
+lf_tr_rf_evaluation <- data.frame(conf_matrix_lf_tr$byClass)
+lf_tr_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  729  309
+#             2  172 7789
+
+# false positive rate
+309 / (309+7789)
+
+# ROC Train
+preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr, 
+                                    newdata = validation_lf_features, 
+                                    type="prob")
+roc_rf_lf_tr_train <- roc(down_train$Class, rand_forest_lf_tr$votes[,2])
+ggroc(roc_rf_lf_tr_train)
+auc(roc_rf_lf_tr_train)
+# 0.997
+
+# ROC Test
+roc_rf_lf_tr_test <- roc(transf_valid$class, preds_rand_forest_lf_tr_roc[,1])
+ggroc(list(train=roc_rf_lf_tr_train, test=roc_rf_lf_tr_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with Transformed Local features") +
+  labs(color = "")
+auc(roc_rf_lf_tr_test)
+# 0.8592
+
+
