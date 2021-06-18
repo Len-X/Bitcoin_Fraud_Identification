@@ -260,7 +260,6 @@ auc(roc_rf_ae_test)
 
 
 
-
 ## Random Forest on Transformed data + DS (all Local Features) ##
             # and/or #
 ## Random Forest on Transformed data + DS + CORRELATION ##
@@ -333,3 +332,63 @@ auc(roc_rf_lf_tr_test)
 # 0.8592,  0.8614
 
 
+## Random Forest on Transformed data + DS + RFE features ##
+
+# Data Preprocessing
+
+## RFE 20 features
+rfe_features <- c("Class", "Local_2",  "Local_55", "Local_49", "Local_8", "Local_58", "Local_90", "Local_67", "Local_31",
+                  "Local_3", "Local_16", "Local_73", "Local_52", "Local_28", "Local_18", "Local_4", "Local_40",
+                  "Local_19", "Local_85", "Local_79", "Local_80")
+
+# subset with transformed down-sampled data
+rfe_train <- down_train_lf[, rfe_features]
+
+# load transformed validation data
+rfe_validation_features <- valid_lf_trans[, rfe_features[2:21]] # predictor variables
+
+set.seed(2021)
+
+# fit the model
+rand_forest_rfe <- randomForest(Class~., data = rfe_train, mtry = 4, importance =TRUE)
+# mtry = sqrt(ncol(rfe_train)-1) = √p = 4 (rounded down)
+rand_forest_rfe
+
+# variable importances for an object created by randomForest
+rf_var_imp_rfe <- data.frame(importance(rand_forest_rfe))
+varImpPlot(rand_forest_rfe, 
+           main = "Variable Importance plot - Transformed Local RFE features and Highly correlated features removed")
+
+preds_rand_forest_rfe <- predict(rand_forest_rfe, newdata = rfe_validation_features)
+
+# Classification Matrix
+conf_matrix_rfe <- confusionMatrix(valid_lf_trans$class, preds_rand_forest_rfe, positive = "1")
+conf_matrix_rfe
+
+rfe_rf_evaluation <- data.frame(conf_matrix_rfe$byClass)
+rfe_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  689  349
+#             2  199 7762
+
+# false positive rate
+349 / (349+7762)
+
+# ROC Train
+preds_rand_forest_rfe_roc <- predict(rand_forest_rfe, 
+                                     newdata = rfe_validation_features, 
+                                     type="prob")
+roc_rf_rfe_train <- roc(rfe_train$Class, rand_forest_rfe$votes[,2])
+ggroc(roc_rf_rfe_train)
+auc(roc_rf_rfe_train)
+# 0.9976
+
+# ROC Test
+roc_rf_rfe_test <- roc(valid_lf_trans$class, preds_rand_forest_rfe_roc[,2])
+ggroc(list(train=roc_rf_rfe_train, test=roc_rf_rfe_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with Transformed Local RFE features and Highly correlated features removed") +
+  labs(color = "")
+auc(roc_rf_rfe_test)
+# 0.8543
