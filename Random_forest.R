@@ -392,3 +392,73 @@ ggroc(list(train=roc_rf_rfe_train, test=roc_rf_rfe_test), legacy.axes = TRUE) +
   labs(color = "")
 auc(roc_rf_rfe_test)
 # 0.8543
+
+
+## Random Forest on Transformed data + DS + LVQ features ##
+
+# Data Preprocessing
+
+# for LVQ top 20 features.
+lvq_features <- c("Class", "Local_55", "Local_90", "Local_49", "Local_31", "Local_18", "Local_91",
+                  "Local_4", "Local_78", "Local_76", "Local_52", "Local_58", "Local_85",
+                  "Local_40", "Local_73", "Local_37", "Local_16", "Local_8", "Local_92",
+                  "Local_80", "Local_67")
+
+lvq_train <- down_train_lf[, lvq_features]
+
+# transform Validation data into the same shape as train data
+lvq_validation_features <- valid_lf_trans[, lvq_features[-1]] # predictor variables
+
+set.seed(2021)
+
+# fit the model
+rand_forest_lvq <- randomForest(Class~., data = lvq_train, mtry = 4, importance =TRUE)
+# mtry = sqrt(ncol(lvq_train)-1) = √p = 4 (rounded down)
+rand_forest_lvq
+
+# variable importances for an object created by randomForest
+rf_var_imp_lvq <- data.frame(importance(rand_forest_lvq))
+varImpPlot(rand_forest_lvq, 
+           main = "Variable Importance plot - Transformed Local LVQ features and Highly correlated features removed")
+
+preds_rand_forest_lvq <- predict(rand_forest_lvq, newdata = lvq_validation_features)
+
+# Classification Matrix
+conf_matrix_lvq <- confusionMatrix(valid_lf_trans$class, preds_rand_forest_lvq, positive = "1")
+conf_matrix_lvq
+
+lvq_rf_evaluation <- data.frame(conf_matrix_lvq$byClass)
+lvq_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  813  225
+#             2  321 7640
+
+# false positive rate
+225 / (225+7640)
+
+# ROC Train
+preds_rand_forest_lvq_roc <- predict(rand_forest_lvq, 
+                                     newdata = lvq_validation_features, 
+                                     type="prob")
+roc_rf_lvq_train <- roc(lvq_train$Class, rand_forest_lvq$votes[,2])
+ggroc(roc_rf_lvq_train)
+auc(roc_rf_lvq_train)
+# 0.9958
+
+# ROC Test
+roc_rf_lvq_test <- roc(valid_lf_trans$class, preds_rand_forest_lvq_roc[,2])
+ggroc(list(train=roc_rf_lvq_train, test=roc_rf_lvq_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with Transformed Local LVQ features and Highly correlated features removed") +
+  labs(color = "")
+auc(roc_rf_lvq_test)
+# 0.8745
+
+
+
+
+
+
+
+
