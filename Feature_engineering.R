@@ -585,6 +585,15 @@ ae_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE)
 # no highly correlated features to remove
 # we use the same df
 
+### TRANSFORMED DATA ###
+
+## re-run with NA features removed ##
+# use before finding Highly Correlated features
+
+trasf_features_na <- c("Local_5", "Local_14", "Local_82")
+
+df_trasf_lf_short <- down_train_lf %>% select(!trasf_features_na)
+df_transf_valid_lf_short <- transf_valid %>% select(!trasf_features_na)
 
 
 # All Local Features Transformed data
@@ -606,8 +615,8 @@ spearman_cor_heatmap
 
 # remove highly correlated features
 lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features removed
-df_lf_transf <- train_local_all %>% select(!(lf_to_remove))
-df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!(lf_to_remove)) # from Logistic_Reg.R
+df_lf_transf <- train_local_all %>% select(!lf_to_remove)
+df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!lf_to_remove) # from above and from Logistic_Reg.R
 
 
 
