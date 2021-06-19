@@ -457,6 +457,71 @@ auc(roc_rf_lvq_test)
 
 
 
+# DS + Autoencoder #
+
+set.seed(2021)
+
+# load Down-Sampled AE train data
+ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_down_train.csv")
+# or from "Logistic_reg.R":
+# ae_train <- ae_train
+
+# ae_train$class<- as.factor(ae_train$class)
+
+# load AE validation
+ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid_new.csv")
+# or from "Logistic_reg.R":
+# ae_validation <- ae_validation
+# ae_validation$class<- as.factor(ae_validation$class)
+
+ae_validation_features <- ae_validation %>% select(-class) # predictor variables
+
+# fit the model
+rand_forest_ae <- randomForest(class~., data = ae_train, mtry = 4, importance =TRUE)
+# mtry = sqrt(ncol(ae_train)-1) = √p = 4 (rounded down)
+rand_forest_ae
+
+# variable importances for an object created by randomForest
+rf_var_imp_ae <- data.frame(importance(rand_forest_ae))
+varImpPlot(rand_forest_ae, 
+           main = "Variable Importance plot - Down-sampled Autoencoder features")
+
+preds_rand_forest_ae <- predict(rand_forest_ae, newdata = ae_validation_features)
+
+# Classification Matrix
+conf_matrix_ae <- confusionMatrix(ae_validation$class, preds_rand_forest_ae, positive = "1")
+conf_matrix_ae
+
+ae_rf_evaluation <- data.frame(conf_matrix_ae$byClass)
+ae_rf_evaluation
+
+#               Reference
+#    Prediction    1    2
+#             1  938  100
+#             2  496 7465 
+
+# false positive rate
+100 / (100+7465)
+
+# ROC Train
+preds_rand_forest_ae_roc <- predict(rand_forest_ae, 
+                                    newdata = ae_validation_features, 
+                                    type="prob")
+roc_rf_ae_train <- roc(ae_train$class, rand_forest_ae$votes[,2])
+ggroc(roc_rf_ae_train)
+auc(roc_rf_ae_train)
+# 0.9863
+
+# ROC Test
+roc_rf_ae_test <- roc(ae_validation$class, preds_rand_forest_ae_roc[,2])
+ggroc(list(train=roc_rf_ae_train, test=roc_rf_ae_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest with with Down-sampled Autoencoder features") +
+  labs(color = "")
+auc(roc_rf_ae_test)
+# 0.9717
+
+
+
 
 
 
