@@ -823,3 +823,104 @@ auc(roc_lvq_test)
 
 
 
+## Fit Logistic Regression to DS + Autoencoder ##
+
+# Data Preprocessing
+
+# load AE train
+ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_down_train.csv")
+# ae_train <- df_ae_train
+
+# rename all of the variables
+varname <- c('V')
+# define number of times above "varname" repeats itself
+n <- c(21) # 21 features, including class
+# replace column names
+names(ae_train)[1:ncol(ae_train)] <- unlist(mapply(function(x,y) 
+  paste(x, seq(0,y), sep="_"), varname, n))
+
+# rename "V_0" variable to "class"
+colnames(ae_train)[1] <- "class"
+
+ae_train$class <- as.factor(ae_train$class)
+
+# load AE validation
+ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid_new.csv")
+
+# rename all of the variables
+varname <- c('V')
+# define number of times above "varname" repeats itself
+n <- c(21) # 21 features, including class
+# replace column names
+names(ae_validation)[1:ncol(ae_validation)] <- unlist(mapply(function(x,y) 
+  paste(x, seq(0,y), sep="_"), varname, n))
+
+# rename "V_0" variable to "class"
+colnames(ae_validation)[1] <- "class"
+
+ae_validation$class<- as.factor(ae_validation$class)
+
+# split ae_validation df into predictor and outcome variables
+ae_validation_features <- ae_validation %>% select(-class) # predictor variables
+ae_validation_outcome <- ae_validation %>% select(class)
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_ae <- glm(class ~ ., data=ae_train, family=binomial)
+
+summary(glm_ae)
+
+# access coefficients
+summary(glm_ae)$coef
+
+# make predictions
+ae_glm_probs <- predict(glm_ae, newdata=ae_validation_features, type="response")
+
+plot(ae_glm_probs)
+
+# first 10 probabilities
+ae_glm_probs[1:10]
+
+ae_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+ae_glm_preds[ae_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+ae_glm_preds <- as.factor(ae_glm_preds)
+
+# Classification Matrix
+conf_matrix_ae <- confusionMatrix(ae_glm_preds, ae_validation_outcome$class, positive = "1")
+conf_matrix_ae
+
+# glm model evaluation on Validation data
+ae_glm_evaluation <- data.frame(conf_matrix_ae$byClass)
+ae_glm_evaluation
+
+#           Reference
+# Prediction    1    2
+#          1  970 2090
+#          2  68 5871
+
+# False positive rate
+2090 /(2090 + 5871)
+
+# AUC/ROC
+
+# ROC Train
+fit_ae <- fitted(glm_ae)
+roc_ae_train <- roc(ae_train$class, fit_ae)
+ggroc(roc_ae_train)
+auc(roc_ae_train)
+# Area under the curve: 0.9533
+
+# ROC Test
+roc_ae_test <- roc(ae_validation_outcome$class, ae_glm_probs)
+ggroc(list(train=roc_ae_train, test=roc_ae_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Down-sampled Autoencoder features") +
+  labs(color = "")
+auc(roc_ae_test)
+# Area under the curve: 0.9003
+
+
