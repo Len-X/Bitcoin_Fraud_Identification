@@ -847,10 +847,7 @@ ae_train$class <- as.factor(ae_train$class)
 # load AE validation
 ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid_new.csv")
 
-# rename all of the variables
-varname <- c('V')
-# define number of times above "varname" repeats itself
-n <- c(21) # 21 features, including class
+# rename all of the variables in validation data
 # replace column names
 names(ae_validation)[1:ncol(ae_validation)] <- unlist(mapply(function(x,y) 
   paste(x, seq(0,y), sep="_"), varname, n))
