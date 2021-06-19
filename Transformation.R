@@ -18,6 +18,11 @@ attach(df)
 # convert class "unknown" to 3
 levels(df$class) <- sub("unknown", 3, levels(df$class))
 
+# workaround
+# df$class[df$class == "unknown"] <- 3
+# df$class <- as.numeric(factor(df$class))
+# df$class <- as.factor(df$class)
+
 ### Train / Validation / Test Split ###
 
 set.seed(2021)
@@ -225,6 +230,15 @@ table(down_train_ae$Class)
 
 #    1    2 
 # 2871 2871
+
+# downsample before running Autoencoder
+train_lf_down <- downSample(x = train_lf[,-1], y = train_lf$class)
+
+table(train_lf_down$Class)
+
+#    1    2 
+# 2871 2871
+
 
 
 
