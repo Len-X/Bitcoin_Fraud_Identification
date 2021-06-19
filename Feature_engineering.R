@@ -192,7 +192,7 @@ df_train_local <- train_local %>%
   filter(class != 3)
 df_train_local$class <- factor(df_train_local$class, levels = c(1,2))
 
-# set training data as matrix
+# set validation data as matrix
 x_valid_local <- valid_local %>% 
   filter(class != 3) %>% 
   select(4:96) %>%
@@ -205,6 +205,30 @@ df_valid_local$class <- factor(df_valid_local$class, levels = c(1,2))
 
 y_train_local <- df_train_local$class
 y_valid_local <- df_valid_local$class
+
+
+# AE with Down-Sapmpled data
+# from "Transformation.R"
+
+# set training data as matrix
+x_train_local <- train_lf_down %>% 
+  select(-Class) %>%
+  as.matrix()
+
+# set validation data as matrix
+x_valid_local <- valid_lf %>% 
+  select(-class) %>%
+  as.matrix()
+
+# set test data as matrix
+x_test_local <- test_lf %>% 
+  select(-class) %>%
+  as.matrix()
+
+# outcome variable
+y_train_local <- train_lf_down$Class
+y_valid_local <- valid_lf$class
+y_test_local <- test_lf$class
 
 
 set.seed(2021)
@@ -248,6 +272,7 @@ model %>% fit(
 # 20 features validation: 100 epoch - loss: 1.022135
 # 20 features train: 500 epoch - loss: 0.03899754, 0.03601634, 0.04308268, 0.03993318, 0.03441159
 # 20 features validation: 500 epoch - loss: 1.037613, 1.192277, 1.07344, 1.058106, 1.011728
+# Down-Sampled 20 features train: 500 epoch - loss: 0.02771759, valid loss: 1.276879, test loss:0.9515869
 
 
 # evaluate the performance of the model
@@ -257,6 +282,9 @@ mse_ae_train
 mse_ae_valid <- evaluate(model, x_valid_local, x_valid_local)
 mse_ae_valid
 
+mse_ae_test <- evaluate(model, x_test_local, x_test_local)
+mse_ae_test
+
 # extract the bottleneck layer
 intermediate_layer_model <- keras_model(inputs = model$input, outputs = get_layer(model, "bottleneck")$output)
 # train prediction
@@ -265,6 +293,13 @@ intermediate_output_train
 # validation prediction
 intermediate_output_valid <- predict(intermediate_layer_model, x_valid_local)
 intermediate_output_valid
+# test prediction
+intermediate_output_test <- predict(intermediate_layer_model, x_test_local)
+intermediate_output_test
+
+# -------------------------------------------------------------------------------------------------------
+
+## DO NOT RUN FOR DOWN-SAPMLED DATA##
 
 # combine resulted AE features with class
 # take an original train class
@@ -288,6 +323,22 @@ df_ae_valid <- cbind(df_class2, intermediate_output_valid)
 # save to csv combined AE hidden layer output
 write.csv(df_ae_train, "ae_20_variables_train.csv", row.names = FALSE)
 write.csv(df_ae_valid, "ae_20_variables_valid.csv", row.names = FALSE)
+
+# -------------------------------------------------------------------------------------------------------
+
+# for down-sampled data
+
+# combine class and AE-derived train features
+df_ae_train <- cbind(y_train_local, intermediate_output_train)
+# combine class and AE-derived validation features
+df_ae_valid <- cbind(y_valid_local, intermediate_output_valid)
+# combine class and AE-derived test features
+df_ae_test <- cbind(y_test_local, intermediate_output_test)
+
+# save to csv combined AE hidden layer output
+write.csv(df_ae_train, "ae_20_down_train.csv", row.names = FALSE)
+write.csv(df_ae_valid, "ae_20_variables_valid_new.csv", row.names = FALSE)
+write.csv(df_ae_test, "ae_20_variables_test.csv", row.names = FALSE)
 
 
 
