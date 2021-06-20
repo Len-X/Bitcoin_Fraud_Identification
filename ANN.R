@@ -91,15 +91,17 @@ history <- model %>% fit(
   x_train, 
   y_train, 
   epochs = 100, 
-  batch_size = 32, 
+  batch_size = 50, 
   validation_split = 0.2,
   verbose = 1)
 
 # plot the history
+print(history)
 plot(history)
 
 # make predictions for the validation data
 predictions <- model %>% predict_classes(x_valid, batch_size = 128)
+probabilities <- model %>% predict_proba(x_valid) %>% as.data.frame()
 
 # swap levels in predictions. Make 1 first
 predictions <- relevel((as.factor(predictions)), "1")
@@ -121,7 +123,12 @@ score <- model %>% evaluate(x_valid, y_valid, batch_size = 128)
 # Print the score
 print(score)
 
-
+# ROC Test
+roc_test <- roc(valid_lf$class, probabilities$V1)
+ggroc(list(Validation = roc_test), legacy.axes = TRUE) +
+  ggtitle("ROC of ANN with Local features") +
+  labs(color = "")
+auc(roc_test)
 
 
 
