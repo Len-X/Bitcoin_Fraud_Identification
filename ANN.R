@@ -55,8 +55,8 @@ model <- keras_model_sequential()
 
 # set model
 model %>%
-  layer_dense(units = 186, activation = "relu", input_shape = ncol(x_train)) %>%
-  layer_dense(units = 62, activation = "relu") %>%
+  layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dense(units = 64, activation = "relu") %>%
   layer_dense(units = 2, activation = "softmax")
 
 # input_shape - number of input variables
@@ -90,7 +90,7 @@ model %>% compile(
 history <- model %>% fit(
   x_train, 
   y_train, 
-  epochs = 50, 
+  epochs = 100, 
   batch_size = 32, 
   validation_split = 0.2,
   verbose = 1)
@@ -101,15 +101,19 @@ plot(history)
 # make predictions for the validation data
 predictions <- model %>% predict_classes(x_valid, batch_size = 128)
 
+# swap levels in predictions. Make 1 first
+predictions <- relevel((as.factor(predictions)), "1")
+table(predictions)
+
 # Confusion matrix
 table(valid_lf$class, predictions)
 
-# swap levels in predictions. Make 1 first
-predictions <- relevel(predictions, "1")
-table(predictions)
-
-conf_matrix <- confusionMatrix(valid_lf$class, predictions, positive = "1")
+conf_matrix <- confusionMatrix(valid_lf$class, predictions)
 conf_matrix
+
+# evaluation by class
+evaluation <- data.frame(conf_matrix$byClass)
+evaluation
 
 # evaluate the model
 score <- model %>% evaluate(x_valid, y_valid, batch_size = 128)
