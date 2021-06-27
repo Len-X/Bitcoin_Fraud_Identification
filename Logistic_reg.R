@@ -1026,9 +1026,9 @@ auc(roc_transf_test)
 
 
 
-## Fit Logistic Regression to Transformed data (all Local Features) ##
+## Fit Logistic Regression to Transformed data with Highly correlated features removed ##
 
-# first, let us run Logistic Regression on all transformed Local features
+# first, let us run Logistic Regression on transformed Local features + CORR
 train_transf_lf <- train_lf_trans # directly from "Transformation.R"
 
 ## re-run with unimportant features removed (UFR) ##
@@ -1041,9 +1041,6 @@ important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Lo
                         "Local_84", "Local_88", "Local_89", "Local_90", "Local_91")
 
 train_transf_lf <- train_lf_trans[, important_features]
-
-# OR
-# with Highly Correlated features removed!
 
 
 # load Transformed validation data

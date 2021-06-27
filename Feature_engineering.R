@@ -649,17 +649,19 @@ df_transf_valid_lf_short <- transf_valid %>% select(!trasf_features_na)
 
 # All Local Features Transformed data
 
-train_local_all <- down_train_lf # directly from "Transformation.R"
-# or load from CSV
-train_local_all <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
-# or with NA features removed! (run Transformation.R)
-train_local_all <- df_trasf_lf_short # from Logistic_Reg.R
+# train_local_all <- down_train_lf # directly from "Transformation.R"
+train_local_all <- train_lf_trans # directly from "Transformation.R"
 
-spearman_cor_local = round(cor(train_local_all %>% select(!Class), method = c("spearman")), 2)
+# or load from CSV
+# train_local_all <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
+# or with NA features removed! (run Transformation.R)
+# train_local_all <- df_trasf_lf_short # from Logistic_Reg.R
+
+spearman_cor_local = round(cor(train_local_all %>% select(!class), method = c("spearman")), 2)
 
 spearman_cor_heatmap <- ggcorrplot(spearman_cor_local, type = "full",
                                    lab_size=1, tl.cex=8, tl.srt=90) +
-  ggtitle("Spearman Correlation Matrix of Transformed Local features (with Down-sampling)") +
+  ggtitle("Spearman Correlation Matrix of Transformed Local features") +
   theme(plot.title = element_text(hjust=0.5))
 
 spearman_cor_heatmap
@@ -667,7 +669,8 @@ spearman_cor_heatmap
 # remove highly correlated features
 lf_to_remove <- findCorrelation(spearman_cor_local, cutoff = 0.9, names=TRUE)  # 53 features removed
 df_lf_transf <- train_local_all %>% select(!lf_to_remove)
-df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!lf_to_remove) # from above and from Logistic_Reg.R
+df_lf_transf_valid <- valid_lf_trans %>% select(!lf_to_remove) # from "Transformation.R"
+# df_lf_transf_valid <- df_transf_valid_lf_short %>% select(!lf_to_remove) # from above and from Logistic_Reg.R
 
 
 
