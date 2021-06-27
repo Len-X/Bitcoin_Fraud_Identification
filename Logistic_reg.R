@@ -1117,3 +1117,80 @@ ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
   labs(color = "")
 auc(roc_transf_test)
 # Area under the curve: 0.9081, 0.9112
+
+
+
+## Logistic Regression on Transformed data COR + RFE + Important Features ##
+
+# first, let us run Logistic Regression on transformed Local features + CORR + RFE
+# (10 features)
+train_transf_rfe <- train_lf_trans[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
+# all 10 features are important!
+
+# load Transformed validation data + CORR + RFE
+valid_transf_rfe <- valid_lf_trans[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
+
+# split trasf_valid_lf df into predictor and outcome variables
+transf_validation_features <- valid_transf_rfe %>% select(-class) # predictor variables
+transf_validation_outcome <- valid_transf_rfe %>% select(class)
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_transf <- glm(class ~ ., data=train_transf_rfe, family=binomial)
+# all 10 features are very important!
+
+summary(glm_transf)
+
+# access coefficients
+summary(glm_transf)$coef
+
+# make predictions
+transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
+
+plot(transf_glm_probs)
+
+# first 10 probabilities
+transf_glm_probs[1:10]
+
+transf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+transf_glm_preds[transf_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+transf_glm_preds <- as.factor(transf_glm_preds)
+
+# Classification Matrix
+conf_matrix_transf <- confusionMatrix(transf_glm_preds, transf_validation_outcome$class, positive = "1")
+conf_matrix_transf
+
+# glm model evaluation on Validation data
+transf_glm_evaluation <- data.frame(conf_matrix_transf$byClass)
+transf_glm_evaluation
+
+#            Reference
+# Prediction    1    2
+#          1  231   62
+#          2  807 7899
+
+# False positive rate
+62/(62+7899)
+
+# AUC/ROC
+
+# ROC Train
+fit_transf <- fitted(glm_transf)
+roc_transf_train <- roc(train_transf_rfe$class, fit_transf)
+ggroc(roc_transf_train)
+auc(roc_transf_train)
+# Area under the curve: 0.9557
+
+# ROC Test
+roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
+ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Transformed RFE features and Highly Correlated features removed") +
+  labs(color = "")
+auc(roc_transf_test)
+# Area under the curve: 0.8333
+
