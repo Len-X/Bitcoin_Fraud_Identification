@@ -1033,26 +1033,25 @@ auc(roc_transf_test)
 train_transf_lf <- df_lf_transf # directly from "Feature_engineering.R"
 
 ## re-run with unimportant features removed (UFR) ##
-# keep only important features at 0.05 significance level ( features)
-important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Local_9", 
-                        "Local_11", "Local_13", "Local_17", "Local_18", "Local_19", "Local_22", 
-                        "Local_28", "Local_35", "Local_37", "Local_41", "Local_43",
-                        "Local_52", "Local_55", "Local_57", "Local_58", "Local_64",
-                        "Local_66", "Local_76", "Local_77", "Local_78", "Local_83",
-                        "Local_84", "Local_88", "Local_89", "Local_90", "Local_91")
+# keep only important features at 0.05 significance level (28 features)
+important_features <- c("class", "Local_2", "Local_4", "Local_7", "Local_8", "Local_10",
+                        "Local_12", "Local_16", "Local_18", "Local_19", "Local_21",
+                        "Local_28", "Local_29", "Local_43", "Local_52", "Local_53",
+                        "Local_54", "Local_56", "Local_68", "Local_71", "Local_74",
+                        "Local_76", "Local_78", "Local_79", "Local_87", "Local_88",
+                        "Local_90", "Local_91", "Local_93")
 
 train_transf_lf <- train_lf_trans[, important_features]
 
-# load Transformed validation data
+# load Transformed validation data + CORR
 valid_transf_lf <- df_lf_transf_valid # directly from "Feature_engineering.R"
 
 ## re-run with unimportant features removed ##
-valid_transf_lf <- valid_lf_trans[, important_features]
+valid_transf_lf <- df_lf_transf_valid[, important_features]
 
 # split trasf_valid_lf df into predictor and outcome variables
 transf_validation_features <- valid_transf_lf %>% select(-class) # predictor variables
 transf_validation_outcome <- valid_transf_lf %>% select(class)
-
 
 ## fit the GLM model
 
@@ -1095,12 +1094,12 @@ transf_glm_evaluation
 
 #           Reference       # unimportant featured removed
 # Prediction    1    2
-#          1  
-#          2  
+#          1  485   84
+#          2  553 7877
 
 # False positive rate
 57/(57+7904)
-92/(92+7869)
+84/(84+7877)
 
 # AUC/ROC
 
@@ -1109,12 +1108,12 @@ fit_transf <- fitted(glm_transf)
 roc_transf_train <- roc(train_transf_lf$class, fit_transf)
 ggroc(roc_transf_train)
 auc(roc_transf_train)
-# Area under the curve: 0.9716
+# Area under the curve: 0.9716, 0.9694
 
 # ROC Test
 roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
 ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with Transformed Local features and Highly Correlated features removed") +
+  ggtitle("ROC of Logistic Regression with Transformed Local features, Highly Correlated and Unimportant features removed") +
   labs(color = "")
 auc(roc_transf_test)
-# Area under the curve: 0.9081
+# Area under the curve: 0.9081, 0.9112
