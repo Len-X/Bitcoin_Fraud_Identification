@@ -549,7 +549,7 @@ auc(roc_ae_test)
 
 
 
-## Fit Logistic Regression to Transformed data (all Local Features) ##
+## Fit Logistic Regression to Transformed data (all Local Features) + DS ##
 
 # Data Preprocessing
 
@@ -921,3 +921,209 @@ auc(roc_ae_test)
 # Area under the curve: 0.9003
 
 
+
+## Fit Logistic Regression to Transformed data (all Local Features) ##
+
+# first, let us run Logistic Regression on all transformed Local features
+train_transf_lf <- train_lf_trans # directly from "Transformation.R"
+
+## re-run with unimportant features removed (UFR) ##
+# keep only important features at 0.05 significance level (31 features)
+important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Local_9", 
+                        "Local_11", "Local_13", "Local_17", "Local_18", "Local_19", "Local_22", 
+                        "Local_28", "Local_35", "Local_37", "Local_41", "Local_43",
+                        "Local_52", "Local_55", "Local_57", "Local_58", "Local_64",
+                        "Local_66", "Local_76", "Local_77", "Local_78", "Local_83",
+                        "Local_84", "Local_88", "Local_89", "Local_90", "Local_91")
+
+train_transf_lf <- train_lf_trans[, important_features]
+
+# OR
+# with Highly Correlated features removed!
+
+
+# load Transformed validation data
+valid_transf_lf <- valid_lf_trans # directly from "Transformation.R"
+
+## re-run with unimportant features removed ##
+valid_transf_lf <- valid_lf_trans[, important_features]
+
+# OR 
+# with Highly Correlated features removed!
+# transform Validation data into the same shape as train data
+
+
+# split trasf_valid_lf df into predictor and outcome variables
+transf_validation_features <- valid_transf_lf %>% select(-class) # predictor variables
+transf_validation_outcome <- valid_transf_lf %>% select(class)
+
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_transf <- glm(class ~ ., data=train_transf_lf, family=binomial)
+
+summary(glm_transf)
+
+# access coefficients
+summary(glm_transf)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
+
+plot(transf_glm_probs)
+
+# first 10 probabilities
+transf_glm_probs[1:10]
+
+transf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+transf_glm_preds[transf_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+transf_glm_preds <- as.factor(transf_glm_preds)
+
+# Classification Matrix
+conf_matrix_transf <- confusionMatrix(transf_glm_preds, transf_validation_outcome$class, positive = "1")
+conf_matrix_transf
+
+# glm model evaluation on Validation data
+transf_glm_evaluation <- data.frame(conf_matrix_transf$byClass)
+transf_glm_evaluation
+
+#            Reference
+# Prediction    1    2
+#          1  646   67
+#          2  392 7894
+
+#           Reference       # unimportant featured removed
+# Prediction    1    2
+#          1  590   92
+#          2  448 7869
+
+# False positive rate
+67/(67+7894)
+92/(92+7869)
+
+# AUC/ROC
+
+# ROC Train
+fit_transf <- fitted(glm_transf)
+roc_transf_train <- roc(train_transf_lf$class, fit_transf)
+ggroc(roc_transf_train)
+auc(roc_transf_train)
+# Area under the curve: 0.9834, 0.976
+
+# ROC Test
+roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
+ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Transformed Important Local features") +
+  labs(color = "")
+auc(roc_transf_test)
+# Area under the curve: 0.9158, 0.8805
+
+
+
+## Fit Logistic Regression to Transformed data (all Local Features) ##
+
+# first, let us run Logistic Regression on all transformed Local features
+train_transf_lf <- train_lf_trans # directly from "Transformation.R"
+
+## re-run with unimportant features removed (UFR) ##
+# keep only important features at 0.05 significance level (31 features)
+important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Local_9", 
+                        "Local_11", "Local_13", "Local_17", "Local_18", "Local_19", "Local_22", 
+                        "Local_28", "Local_35", "Local_37", "Local_41", "Local_43",
+                        "Local_52", "Local_55", "Local_57", "Local_58", "Local_64",
+                        "Local_66", "Local_76", "Local_77", "Local_78", "Local_83",
+                        "Local_84", "Local_88", "Local_89", "Local_90", "Local_91")
+
+train_transf_lf <- train_lf_trans[, important_features]
+
+# OR
+# with Highly Correlated features removed!
+
+
+# load Transformed validation data
+valid_transf_lf <- valid_lf_trans # directly from "Transformation.R"
+
+## re-run with unimportant features removed ##
+valid_transf_lf <- valid_lf_trans[, important_features]
+
+# OR 
+# with Highly Correlated features removed!
+# transform Validation data into the same shape as train data
+
+
+# split trasf_valid_lf df into predictor and outcome variables
+transf_validation_features <- valid_transf_lf %>% select(-class) # predictor variables
+transf_validation_outcome <- valid_transf_lf %>% select(class)
+
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_transf <- glm(class ~ ., data=train_transf_lf, family=binomial)
+
+summary(glm_transf)
+
+# access coefficients
+summary(glm_transf)$coef
+# The smallest p-value here is associated with:
+
+# make predictions
+transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
+
+plot(transf_glm_probs)
+
+# first 10 probabilities
+transf_glm_probs[1:10]
+
+transf_glm_preds = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+transf_glm_preds[transf_glm_probs >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+transf_glm_preds <- as.factor(transf_glm_preds)
+
+# Classification Matrix
+conf_matrix_transf <- confusionMatrix(transf_glm_preds, transf_validation_outcome$class, positive = "1")
+conf_matrix_transf
+
+# glm model evaluation on Validation data
+transf_glm_evaluation <- data.frame(conf_matrix_transf$byClass)
+transf_glm_evaluation
+
+#            Reference
+# Prediction    1    2
+#          1  646   67
+#          2  392 7894
+
+#           Reference       # unimportant featured removed
+# Prediction    1    2
+#          1  590   92
+#          2  448 7869
+
+# False positive rate
+67/(67+7894)
+92/(92+7869)
+
+# AUC/ROC
+
+# ROC Train
+fit_transf <- fitted(glm_transf)
+roc_transf_train <- roc(train_transf_lf$class, fit_transf)
+ggroc(roc_transf_train)
+auc(roc_transf_train)
+# Area under the curve: 0.9834, 0.976
+
+# ROC Test
+roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
+ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression with Transformed Important Local features") +
+  labs(color = "")
+auc(roc_transf_test)
+# Area under the curve: 0.9158, 0.8805
