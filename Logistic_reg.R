@@ -1029,10 +1029,11 @@ auc(roc_transf_test)
 ## Fit Logistic Regression to Transformed data with Highly correlated features removed ##
 
 # first, let us run Logistic Regression on transformed Local features + CORR
-train_transf_lf <- train_lf_trans # directly from "Transformation.R"
+# (41 features)
+train_transf_lf <- df_lf_transf # directly from "Feature_engineering.R"
 
 ## re-run with unimportant features removed (UFR) ##
-# keep only important features at 0.05 significance level (31 features)
+# keep only important features at 0.05 significance level ( features)
 important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Local_9", 
                         "Local_11", "Local_13", "Local_17", "Local_18", "Local_19", "Local_22", 
                         "Local_28", "Local_35", "Local_37", "Local_41", "Local_43",
@@ -1042,17 +1043,11 @@ important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Lo
 
 train_transf_lf <- train_lf_trans[, important_features]
 
-
 # load Transformed validation data
-valid_transf_lf <- valid_lf_trans # directly from "Transformation.R"
+valid_transf_lf <- df_lf_transf_valid # directly from "Feature_engineering.R"
 
 ## re-run with unimportant features removed ##
 valid_transf_lf <- valid_lf_trans[, important_features]
-
-# OR 
-# with Highly Correlated features removed!
-# transform Validation data into the same shape as train data
-
 
 # split trasf_valid_lf df into predictor and outcome variables
 transf_validation_features <- valid_transf_lf %>% select(-class) # predictor variables
@@ -1069,7 +1064,6 @@ summary(glm_transf)
 
 # access coefficients
 summary(glm_transf)$coef
-# The smallest p-value here is associated with:
 
 # make predictions
 transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
@@ -1096,16 +1090,16 @@ transf_glm_evaluation
 
 #            Reference
 # Prediction    1    2
-#          1  646   67
-#          2  392 7894
+#          1  402   57
+#          2  636 7904
 
 #           Reference       # unimportant featured removed
 # Prediction    1    2
-#          1  590   92
-#          2  448 7869
+#          1  
+#          2  
 
 # False positive rate
-67/(67+7894)
+57/(57+7904)
 92/(92+7869)
 
 # AUC/ROC
@@ -1115,12 +1109,12 @@ fit_transf <- fitted(glm_transf)
 roc_transf_train <- roc(train_transf_lf$class, fit_transf)
 ggroc(roc_transf_train)
 auc(roc_transf_train)
-# Area under the curve: 0.9834, 0.976
+# Area under the curve: 0.9716
 
 # ROC Test
 roc_transf_test <- roc(transf_validation_outcome$class, transf_glm_probs)
 ggroc(list(train=roc_transf_train, test=roc_transf_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with Transformed Important Local features") +
+  ggtitle("ROC of Logistic Regression with Transformed Local features and Highly Correlated features removed") +
   labs(color = "")
 auc(roc_transf_test)
-# Area under the curve: 0.9158, 0.8805
+# Area under the curve: 0.9081
