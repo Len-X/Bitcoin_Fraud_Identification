@@ -685,11 +685,18 @@ set.seed(2021)
 rfe_train_local <- df_lf_transf
 # rfe_train_local <- droplevels(rfe_train_local)
 
-# set 10-fold CV coltrols
+# set 5-fold CV controls
 control <- rfeControl(functions=rfFuncs, method="cv", number=5)
 
+# run for transformed down-sampled data + CORR
 rfe_local <- rfe(rfe_train_local[,1:40], 
                  rfe_train_local[,41], 
+                 sizes=c(2:20), 
+                 rfeControl=control)
+
+# run for transformed data + CORR
+rfe_local <- rfe(rfe_train_local[,2:42], 
+                 rfe_train_local[,1], 
                  sizes=c(2:20), 
                  rfeControl=control)
 
@@ -701,7 +708,8 @@ predictors(rfe_local)
 plot(rfe_local, type=c("g", "o"), main="Feature Selection with RFE of Transformed data")
 
 # rfe variables
-rfe_variables <- as.data.frame(rfe_local$variables)
+rfe_variables <- predictors(rfe_local)
+# rfe_variables <- as.data.frame(rfe_local$variables)
 
 # save to csv
 # write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables_transf.csv", row.names = FALSE)
