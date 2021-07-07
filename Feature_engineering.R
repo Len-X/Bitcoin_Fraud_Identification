@@ -636,6 +636,7 @@ ae_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE)
 # no highly correlated features to remove
 # we use the same df
 
+
 ### TRANSFORMED DATA ###
 
 ## re-run with NA features removed ##
@@ -723,11 +724,14 @@ lvq_train_local <- df_lf_transf
 # Since we got a warning (see below), let us remove Local_15 feature
 # lvq_train_local <- df_lf_transf %>% select(!Local_15)
 
+# These variables have zero variances: Local_5, Local_82
+lvq_train_local <- df_lf_transf %>% select(!c(Local_5, Local_82))
+
 # prepare training scheme
 control_lvq <- trainControl(method="repeatedcv", number=5, repeats=3)
 
 # train the model
-lvq_model <- train(Class ~., data=lvq_train_local, 
+lvq_model <- train(class ~., data=lvq_train_local, 
                    method="lvq", 
                    preProcess="scale", 
                    trControl=control_lvq)
@@ -747,6 +751,9 @@ plot(lvq_importance, main="Feature Selection of Transformed data with LVQ")
 lvq_sorted <- as.data.frame(lvq_importance$importance)
 lvq_sorted <- lvq_sorted[order(-lvq_sorted$X1),]
 print(lvq_sorted)
+
+# get 20 most important LVQ features
+lvq_features_transf <- row.names(lvq_sorted)[1:20]
 
 # save to csv
 # write.csv(lvq_sorted,"~/Desktop/MASTERS/Bitcoin/lvq_sorted_var_transf_DS.csv", row.names = FALSE)
