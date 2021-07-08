@@ -3,12 +3,13 @@
 # install necessary packeges
 # install.packages("bestNormalize")
 # install.packages("ROSE")
+# install.packages("DMwR")
 library(tidyverse)
 library(ggplot2)
 library(caret)
 library(bestNormalize)
 library(ROSE)
-
+library(DMwR) # SMOTE sampling
 
 ### Data Preprocessing ###
 
