@@ -240,5 +240,28 @@ table(train_lf_down$Class)
 # 2871 2871
 
 
+# Upsampling #
+
+set.seed(2021)
+
+# transformed data
+up_train_lf <- upSample(x = train_lf_trans[,-1], y = train_lf_trans$class)
+
+table(up_train_lf$Class)
+
+#     1     2 
+# 23510 23510 
+
+# Upsample before running Autoencoder / Raw data
+train_lf_up <- upSample(x = train_lf[,-1], y = train_lf$class)
+
+table(train_lf_up$Class)
+
+#     1     2 
+# 23510 23510 
+
+
+
+
 
 

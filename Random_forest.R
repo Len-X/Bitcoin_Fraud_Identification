@@ -554,11 +554,11 @@ lf_tr_rf_evaluation
 
 #               Reference
 #    Prediction    1    2
-#             1  
-#             2  
+#             1  657  381
+#             2   14 7947
 
 # false positive rate
-309 / (309+7789) # all local transf. features
+381 / (381+7947) # all local transf. features
 
 # ROC Train
 preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr, 
@@ -567,7 +567,7 @@ preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr,
 roc_rf_lf_tr_train <- roc(transf_train_lf$class, rand_forest_lf_tr$votes[,2])
 ggroc(roc_rf_lf_tr_train)
 auc(roc_rf_lf_tr_train)
-# 
+# 0.9972
 
 # ROC Test
 roc_rf_lf_tr_test <- roc(transf_valid_lf$class, preds_rand_forest_lf_tr_roc[,1])
@@ -575,7 +575,7 @@ ggroc(list(train=roc_rf_lf_tr_train, test=roc_rf_lf_tr_test), legacy.axes = TRUE
   ggtitle("ROC of Random Forest with Transformed Local features") +
   labs(color = "")
 auc(roc_rf_lf_tr_test)
-# 
+# 0.9016
 
 
 
