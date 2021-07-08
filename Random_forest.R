@@ -536,18 +536,23 @@ validation_lf_features <- transf_valid_lf %>% select(-class) # features
 
 # Up-Sampled data - all Local transformed features
 transf_train_lf <- up_train_lf # directly from "Transformation.R"
+# ROSE Sampling method - all Local transformed features
+transf_train_lf <- train_lf_rose # directly from "Transformation.R"
 
 # fit the model
-rand_forest_lf_tr <- randomForest(Class~., data = transf_train_lf, mtry = 9, importance =TRUE)
+rand_forest_lf_tr <- randomForest(class~., data = transf_train_lf, mtry = 9, importance =TRUE)
 # mtry = √p = 9 (rounded down) - all Local Features
 rand_forest_lf_tr
 
 # variable importances for an object created by randomForest
 rf_var_imp_lf_tr <- data.frame(importance(rand_forest_lf_tr))
 varImpPlot(rand_forest_lf_tr, 
-           main = "Variable Importance plot - Up-sampled Transformed Local features")
+           main = "Variable Importance plot - Transformed Local features using ROSE sampling")
 
 preds_rand_forest_lf_tr <- predict(rand_forest_lf_tr, newdata = validation_lf_features)
+
+# relevel classes to make "1" first
+# preds_rand_forest_lf_tr <- relevel(preds_rand_forest_lf_tr, "1")
 
 # Classification Matrix
 conf_matrix_lf_tr <- confusionMatrix(transf_valid_lf$class, preds_rand_forest_lf_tr, positive = "1")
@@ -561,26 +566,34 @@ lf_tr_rf_evaluation
 #             1  657  381     #             1  495  543
 #             2   14 7947     #             2   13 7948
 
+
+#               Reference     #               Reference
+#    Prediction    1    2     #    Prediction    1    2
+#             1    0 1038     #             1  
+#             2    0 7961     #             2   
+
+
 # false positive rate
 381 / (381+7947) # all local transf. features
 543 / (543+7948) # all local transf. features with Up-Sampling
+1038 / (1038+7961) # all local transf. features with ROSE sampling
 
 # ROC Train
 preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr, 
                                        newdata = validation_lf_features, 
                                        type="prob")
-roc_rf_lf_tr_train <- roc(transf_train_lf$Class, rand_forest_lf_tr$votes[,2])
+roc_rf_lf_tr_train <- roc(transf_train_lf$class, rand_forest_lf_tr$votes[,2])
 ggroc(roc_rf_lf_tr_train)
 auc(roc_rf_lf_tr_train)
-# 0.9972, 1
+# 0.9972, 1, 1
 
 # ROC Test
 roc_rf_lf_tr_test <- roc(transf_valid_lf$class, preds_rand_forest_lf_tr_roc[,1])
 ggroc(list(train=roc_rf_lf_tr_train, test=roc_rf_lf_tr_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Random Forest with Up-Sampled Transformed Local features") +
+  ggtitle("ROC of Random Forest - Transformed Local features with ROSE sampling") +
   labs(color = "")
 auc(roc_rf_lf_tr_test)
-# 0.9016, 0.9022
+# 0.9016, 0.9022, 0.934
 
 
 
