@@ -2,10 +2,12 @@
 
 # install necessary packeges
 # install.packages("bestNormalize")
+# install.packages("ROSE")
 library(tidyverse)
 library(ggplot2)
 library(caret)
 library(bestNormalize)
+library(ROSE)
 
 
 ### Data Preprocessing ###
@@ -261,6 +263,24 @@ table(train_lf_up$Class)
 # 23510 23510 
 
 
+# Hybrid sampling methods
+# add new synthetic data points to the minority class and downsample the majority class
+
+# ROSE method on transformed data
+train_lf_rose <- ROSE(class~., data=train_lf_trans)$data
+
+table(train_lf_rose$class)
+
+#     2     1 
+# 13179 13202
+
+# ROSE method on raw data
+train_rose_lf <- ROSE(class~., data=train_lf)$data
+
+table(train_rose_lf$class)
+
+#     2     1 
+# 13061 13320 
 
 
 
