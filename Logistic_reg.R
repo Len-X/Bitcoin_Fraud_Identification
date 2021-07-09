@@ -1344,3 +1344,81 @@ ggroc(list(train=roc_train_all, test=roc_test_all), legacy.axes = TRUE) +
 auc(roc_test_all)
 # Area under the curve: 0.759, 0.7495
 
+
+
+### Fit Logistic Regression to AF + RFE ###
+
+# train - RFE on All features
+train_af_rfe <- train_af[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
+
+# validation data - RFE on All features
+valid_af_rfe <- valid_af[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
+
+# CORR: highly correlated features removed
+# train_all <- train_af_corr # directly from "Feature_engineering.R"
+# valid_all <- valid_af_corr # directly from "Feature_engineering.R"
+
+# split trasf_valid_lf df into predictor and outcome variables
+validation_features <- valid_af_rfe %>% select(-class) # predictor variables
+validation_outcome <- valid_af_rfe %>% select(class)
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_af_rfe <- glm(class ~ ., data=train_af_rfe, family=binomial)
+
+summary(glm_af_rfe)
+
+# make predictions
+glm_probs_af_rfe <- predict(glm_af_rfe, newdata=validation_features, type="response")
+
+plot(glm_probs_af_rfe)
+
+# first 10 probabilities
+glm_probs_af_rfe[1:10]
+
+glm_preds_af_rfe = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+glm_preds_af_rfe[glm_probs_af_rfe >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+glm_preds_af_rfe <- as.factor(glm_preds_af_rfe)
+
+# Classification Matrix
+conf_matrix_af_rfe <- confusionMatrix(glm_preds_af_rfe, validation_outcome$class, positive = "1")
+conf_matrix_af_rfe
+
+# glm model evaluation on Validation data
+glm_evaluation_af_rfe <- data.frame(conf_matrix_af_rfe$byClass)
+glm_evaluation_af_rfe
+
+#            Reference      #            Reference
+# Prediction    1    2      # Prediction    1    2
+#          1   43   41      #          1        
+#          2  995 7920      #          2   
+
+# False positive rate
+41/(41+4431)
+
+# AUC/ROC
+
+# ROC Train
+fit_af_rfe <- fitted(glm_af_rfe)
+roc_train_af_rfe <- roc(train_all$class, fit_af_rfe)
+ggroc(roc_train_af_rfe)
+auc(roc_train_af_rfe)
+# Area under the curve: 0.5025
+
+# ROC Test
+roc_test_af_rfe <- roc(validation_outcome$class, glm_probs_af_rfe)
+ggroc(list(train=roc_train_af_rfe, test=roc_test_af_rfe), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression on All Features with Highly Correlated featured removed") +
+  labs(color = "")
+auc(roc_test_af_rfe)
+# Area under the curve: 0.5181
+
+
+
+
+
