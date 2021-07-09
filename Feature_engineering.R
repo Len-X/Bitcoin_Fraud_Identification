@@ -766,4 +766,25 @@ lvq_features_transf <- row.names(lvq_sorted)[1:20]
 # Since we have this warning, let us remove Local_15 feature
 
 
+### Correlation on All Features ###
+
+features_af <- train_af %>% select(-class) # directly from "Transformation.R"
+
+# Spearman Correlation
+spearman_cor = round(cor(features_af, method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor, type = "full",
+                                   lab_size=1, tl.cex=4, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of All Features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+af_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE) # (78 features)
+train_af_corr <- train_af %>% select(!af_to_remove) # (87 features)
+valid_af_corr <- valid_af %>% select(!af_to_remove) # from "Transformation.R"
+
+
+
 
