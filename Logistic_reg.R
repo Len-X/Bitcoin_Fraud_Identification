@@ -1277,6 +1277,12 @@ train_all <- train_af # directly from "Transformation.R"
 # load validation data -  All features
 valid_all <- valid_af # directly from "Transformation.R"
 
+# CORR: highly correlated features removed
+train_all <- train_af_corr # directly from "Feature_engineering.R"
+valid_all <- valid_af_corr # directly from "Feature_engineering.R"
+# algorithm did not converge ***
+# every feature is important ***
+
 # split trasf_valid_lf df into predictor and outcome variables
 validation_features <- valid_all %>% select(-class) # predictor variables
 validation_outcome <- valid_all %>% select(class)
@@ -1312,13 +1318,14 @@ conf_matrix_all
 glm_evaluation_all <- data.frame(conf_matrix_all$byClass)
 glm_evaluation_all
 
-#            Reference
-# Prediction    1    2
-#          1  998 3530
-#          2   40 4431
+#            Reference      #            Reference
+# Prediction    1    2      # Prediction    1    2
+#          1  998 3530      #          1  978 3529      
+#          2   40 4431      #          2   60 4432
 
 # False positive rate
 3530/(3530+4431)
+3529/(3529+4432)
 
 # AUC/ROC
 
@@ -1327,13 +1334,13 @@ fit_all <- fitted(glm_all)
 roc_train_all <- roc(train_all$class, fit_all)
 ggroc(roc_train_all)
 auc(roc_train_all)
-# Area under the curve: 0.9001
+# Area under the curve: 0.9001, 0.8938
 
 # ROC Test
 roc_test_all <- roc(validation_outcome$class, glm_probs_all)
 ggroc(list(train=roc_train_all, test=roc_test_all), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression on All Features") +
+  ggtitle("ROC of Logistic Regression on All Features with Highly Correlated featured removed") +
   labs(color = "")
 auc(roc_test_all)
-# Area under the curve: 0.759
+# Area under the curve: 0.759, 0.7495
 
