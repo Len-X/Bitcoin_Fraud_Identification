@@ -679,10 +679,7 @@ df_lf_transf_valid <- valid_lf_trans %>% select(!lf_to_remove) # from "Transform
 
 
 ### Recursive Feature Elimination (RFE) algorithm ###
-### On Transformed data with Highly Correlated features removed ###
-
-# RFE is in library Caret
-library(caret)
+### On Transformed data ###
 
 set.seed(2021)
 
@@ -717,6 +714,32 @@ rfe_variables <- predictors(rfe_local)
 
 # save to csv
 # write.csv(rfe_variables,"~/Desktop/MASTERS/Bitcoin/rfe_variables_transf.csv", row.names = FALSE)
+
+
+### RFE on ALL data (AF) ###
+
+set.seed(2021)
+
+rfe_train_af <- train_af
+
+# set 5-fold CV controls
+control <- rfeControl(functions=rfFuncs, method="cv", number=5)
+
+# run on All features
+rfe_all <- rfe(rfe_train_af[,2:166], 
+                 rfe_train_af[,1], 
+                 sizes=c(2:20), 
+                 rfeControl=control)
+
+rfe_all
+
+# list the chosen features
+predictors(rfe_all)
+# plot the results
+plot(rfe_all, type=c("g", "o"), main="Feature Selection with RFE on All data")
+
+# rfe variables
+rfe_variables <- predictors(rfe_all)
 
 
 
