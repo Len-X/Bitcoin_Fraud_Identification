@@ -938,25 +938,15 @@ important_features <- c("class", "Local_1", "Local_2", "Local_3", "Local_7", "Lo
 
 train_transf_lf <- train_lf_trans[, important_features]
 
-# OR
-# with Highly Correlated features removed!
-
-
 # load Transformed validation data
 valid_transf_lf <- valid_lf_trans # directly from "Transformation.R"
 
 ## re-run with unimportant features removed ##
 valid_transf_lf <- valid_lf_trans[, important_features]
 
-# OR 
-# with Highly Correlated features removed!
-# transform Validation data into the same shape as train data
-
-
 # split trasf_valid_lf df into predictor and outcome variables
 transf_validation_features <- valid_transf_lf %>% select(-class) # predictor variables
 transf_validation_outcome <- valid_transf_lf %>% select(class)
-
 
 ## fit the GLM model
 
@@ -965,10 +955,6 @@ set.seed(2021)
 glm_transf <- glm(class ~ ., data=train_transf_lf, family=binomial)
 
 summary(glm_transf)
-
-# access coefficients
-summary(glm_transf)$coef
-# The smallest p-value here is associated with:
 
 # make predictions
 transf_glm_probs <- predict(glm_transf, newdata=transf_validation_features, type="response")
@@ -1280,4 +1266,74 @@ auc(roc_lvq_test)
 # Area under the curve: 0.9374, 0.9383
 
 
+
+### Fit Logistic Regression to All Features (AF) Local + Aggregated ###
+
+# train - All features
+train_all <- train_af # directly from "Transformation.R"
+# algorithm did not converge ***
+# every feature is important ***
+
+# load validation data -  All features
+valid_all <- valid_af # directly from "Transformation.R"
+
+# split trasf_valid_lf df into predictor and outcome variables
+validation_features <- valid_all %>% select(-class) # predictor variables
+validation_outcome <- valid_all %>% select(class)
+
+## fit the GLM model
+
+set.seed(2021)
+
+glm_all <- glm(class ~ ., data=train_all, family=binomial)
+
+summary(glm_all)
+
+# make predictions
+glm_probs_all <- predict(glm_all, newdata=validation_features, type="response")
+
+plot(glm_probs_all)
+
+# first 10 probabilities
+glm_probs_all[1:10]
+
+glm_preds_all = rep(1, 8999) # creates a vector of 8,999 class "1" elements
+glm_preds_all[glm_probs_all >.5 ] = 2 # transforms to class "2" all of the elements 
+# for which the predicted probability of class 2 exceeds 0.5
+
+# set levels for predictions
+glm_preds_all <- as.factor(glm_preds_all)
+
+# Classification Matrix
+conf_matrix_all <- confusionMatrix(glm_preds_all, validation_outcome$class, positive = "1")
+conf_matrix_all
+
+# glm model evaluation on Validation data
+glm_evaluation_all <- data.frame(conf_matrix_all$byClass)
+glm_evaluation_all
+
+#            Reference
+# Prediction    1    2
+#          1  998 3530
+#          2   40 4431
+
+# False positive rate
+3530/(3530+4431)
+
+# AUC/ROC
+
+# ROC Train
+fit_all <- fitted(glm_all)
+roc_train_all <- roc(train_all$class, fit_all)
+ggroc(roc_train_all)
+auc(roc_train_all)
+# Area under the curve: 0.9001
+
+# ROC Test
+roc_test_all <- roc(validation_outcome$class, glm_probs_all)
+ggroc(list(train=roc_train_all, test=roc_test_all), legacy.axes = TRUE) +
+  ggtitle("ROC of Logistic Regression on All Features") +
+  labs(color = "")
+auc(roc_test_all)
+# Area under the curve: 0.759
 
