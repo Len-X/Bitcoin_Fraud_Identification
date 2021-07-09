@@ -658,6 +658,9 @@ train_local_all <- train_lf_trans # directly from "Transformation.R"
 # or with NA features removed! (run Transformation.R)
 # train_local_all <- df_trasf_lf_short # from Logistic_Reg.R
 
+# All Local Features Transformed data with Up-Sampling
+train_local_all <- up_train_lf # directly from "Transformation.R"
+
 spearman_cor_local = round(cor(train_local_all %>% select(!class), method = c("spearman")), 2)
 
 spearman_cor_heatmap <- ggcorrplot(spearman_cor_local, type = "full",
