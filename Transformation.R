@@ -40,7 +40,7 @@ train_local <- train_full %>% select(1:96)
 valid_local <- valid_full %>% select(1:96)
 test_local <- test_full %>% select(1:96)
 
-# remove class 3 and variables txId and TimeStep
+# remove class 3 and variables txId and TimeStep on Local Features
 train_lf <- train_local %>% 
   filter(class != 3) %>%
   select(-c(txId, TimeStep))
@@ -53,11 +53,28 @@ test_lf <- test_local %>%
   filter(class != 3) %>%
   select(-c(txId, TimeStep))
 
+# remove class 3 and variables txId and TimeStep on All Features (Local+Aggregated)
+train_af <- train_full %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+valid_af <- valid_full %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
+test_af <- test_full %>% 
+  filter(class != 3) %>%
+  select(-c(txId, TimeStep))
+
 # relevel to two factor levels instead of three
 train_lf$class <- factor(train_lf$class, levels = c(1,2))
 valid_lf$class <- factor(valid_lf$class, levels = c(1,2))
 test_lf$class <- factor(test_lf$class, levels = c(1,2))
 # train_lf[,-1]
+
+train_af$class <- factor(train_af$class, levels = c(1,2))
+valid_af$class <- factor(valid_af$class, levels = c(1,2))
+test_af$class <- factor(test_af$class, levels = c(1,2))
 
 # transform negative values in data for Box-Cox method: 
 # find the lowest (negative) value
