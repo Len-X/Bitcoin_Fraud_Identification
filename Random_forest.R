@@ -524,6 +524,7 @@ auc(roc_rf_ae_test)
 
 ## Random Forest on Transformed data (all Local Features) ##
 ## Random Forest on Transformed data (all Local Features) + Upsample ##
+## Random Forest on Transformed data (all Local Features) + CORR (Highly Correlated features removed) ##
 
 # Data Preprocessing
 set.seed(2021)
@@ -535,19 +536,25 @@ transf_valid_lf <- valid_lf_trans # directly from "Transformation.R"
 validation_lf_features <- transf_valid_lf %>% select(-class) # features
 
 # Up-Sampled data - all Local transformed features
-transf_train_lf <- up_train_lf # directly from "Transformation.R"
+# transf_train_lf <- up_train_lf # directly from "Transformation.R"
+
 # ROSE Sampling method - all Local transformed features
-transf_train_lf <- train_lf_rose # directly from "Transformation.R"
+# transf_train_lf <- train_lf_rose # directly from "Transformation.R"
+
+# CORR (Highly Correlated features removed) - all Local transformed features
+transf_train_lf <- df_lf_transf # directly from "Feature_engineering.R"
+validation_lf_features <- df_lf_transf_valid %>% select(-class) # features
 
 # fit the model
-rand_forest_lf_tr <- randomForest(class~., data = transf_train_lf, mtry = 9, importance =TRUE)
+rand_forest_lf_tr <- randomForest(class~., data = transf_train_lf, mtry = 6, importance =TRUE)
 # mtry = √p = 9 (rounded down) - all Local Features
+# mtry = √p = 6 (rounded down) - all Local Features with Highly Correlated features removed
 rand_forest_lf_tr
 
 # variable importances for an object created by randomForest
 rf_var_imp_lf_tr <- data.frame(importance(rand_forest_lf_tr))
 varImpPlot(rand_forest_lf_tr, 
-           main = "Variable Importance plot - Transformed Local features using ROSE sampling")
+           main = "Variable Importance plot - Transformed Local features with Highly Correlated features removed")
 
 preds_rand_forest_lf_tr <- predict(rand_forest_lf_tr, newdata = validation_lf_features)
 
@@ -555,7 +562,7 @@ preds_rand_forest_lf_tr <- predict(rand_forest_lf_tr, newdata = validation_lf_fe
 # preds_rand_forest_lf_tr <- relevel(preds_rand_forest_lf_tr, "1")
 
 # Classification Matrix
-conf_matrix_lf_tr <- confusionMatrix(transf_valid_lf$class, preds_rand_forest_lf_tr, positive = "1")
+conf_matrix_lf_tr <- confusionMatrix(df_lf_transf_valid$class, preds_rand_forest_lf_tr, positive = "1")
 conf_matrix_lf_tr
 
 lf_tr_rf_evaluation <- data.frame(conf_matrix_lf_tr$byClass)
@@ -569,14 +576,15 @@ lf_tr_rf_evaluation
 
 #               Reference     #               Reference
 #    Prediction    1    2     #    Prediction    1    2
-#             1    0 1038     #             1  
-#             2    0 7961     #             2   
+#             1    0 1038     #             1  470  568
+#             2    0 7961     #             2    3 7958
 
 
 # false positive rate
 381 / (381+7947) # all local transf. features
 543 / (543+7948) # all local transf. features with Up-Sampling
 1038 / (1038+7961) # all local transf. features with ROSE sampling
+568 / (568+7958) # all local transf. features with Highly Correlated features removed
 
 # ROC Train
 preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr, 
@@ -585,15 +593,15 @@ preds_rand_forest_lf_tr_roc <- predict(rand_forest_lf_tr,
 roc_rf_lf_tr_train <- roc(transf_train_lf$class, rand_forest_lf_tr$votes[,2])
 ggroc(roc_rf_lf_tr_train)
 auc(roc_rf_lf_tr_train)
-# 0.9972, 1, 1
+# 0.9972, 1, 1, 0.9971
 
 # ROC Test
-roc_rf_lf_tr_test <- roc(transf_valid_lf$class, preds_rand_forest_lf_tr_roc[,1])
+roc_rf_lf_tr_test <- roc(df_lf_transf_valid$class, preds_rand_forest_lf_tr_roc[,1])
 ggroc(list(train=roc_rf_lf_tr_train, test=roc_rf_lf_tr_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Random Forest - Transformed Local features with ROSE sampling") +
+  ggtitle("ROC of Random Forest - Transformed Local features with Highly Correlated features removed") +
   labs(color = "")
 auc(roc_rf_lf_tr_test)
-# 0.9016, 0.9022, 0.934
+# 0.9016, 0.9022, 0.934, 0.8983
 
 
 
