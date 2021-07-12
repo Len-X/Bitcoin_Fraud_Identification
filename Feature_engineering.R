@@ -726,6 +726,7 @@ rfe_train_af <- train_af
 control <- rfeControl(functions=rfFuncs, method="cv", number=5)
 
 # run on All features
+# tried: 20, 30 features
 rfe_all <- rfe(rfe_train_af[,2:166], 
                  rfe_train_af[,1], 
                  sizes=c(2:20), 
@@ -740,6 +741,28 @@ plot(rfe_all, type=c("g", "o"), main="Feature Selection with RFE on All data")
 
 # rfe variables
 rfe_variables <- predictors(rfe_all)
+
+# 20 RFE variables
+# rfe_20 <- rfe_variables
+# rfe_30 <- rfe_variables
+
+# remove highly correlated features
+train_all <- train_af %>% select(c(class, all_of(rfe_20)))
+# train_all <- rfe_variables
+
+spearman_cor_all = round(cor(train_all %>% select(-class), method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor_all, type = "full",
+                                   lab_size=1, tl.cex=8, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of 20 RFE on all features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+af_to_remove <- findCorrelation(spearman_cor_all, cutoff = 0.9, names=TRUE)  # 53 features removed
+df_af_train <- train_all %>% select(-af_to_remove)
+df_af_valid <- valid_af %>% select(colnames(df_af_train))
 
 
 
