@@ -1347,6 +1347,7 @@ auc(roc_test_all)
 
 
 ### Fit Logistic Regression to AF + RFE ###
+### Fit Logistic Regression to AF + RFE + CORR (15 features) ###
 
 # train - RFE on All features
 train_af_rfe <- train_af[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
@@ -1354,9 +1355,9 @@ train_af_rfe <- train_af[, c("class", rfe_variables)] # directly from "Feature_e
 # validation data - RFE on All features
 valid_af_rfe <- valid_af[, c("class", rfe_variables)] # directly from "Feature_engineering.R"
 
-# CORR: highly correlated features removed
-# train_all <- train_af_corr # directly from "Feature_engineering.R"
-# valid_all <- valid_af_corr # directly from "Feature_engineering.R"
+# CORR: highly correlated features removed (15 features left)
+train_af_rfe <- df_af_train # directly from "Feature_engineering.R"
+valid_af_rfe <- df_af_valid # directly from "Feature_engineering.R"
 
 # split trasf_valid_lf df into predictor and outcome variables
 validation_features <- valid_af_rfe %>% select(-class) # predictor variables
@@ -1395,11 +1396,12 @@ glm_evaluation_af_rfe
 
 #            Reference      #            Reference
 # Prediction    1    2      # Prediction    1    2
-#          1   43   41      #          1        
-#          2  995 7920      #          2   
+#          1   43   41      #          1  846 2439      
+#          2  995 7920      #          2  192 5522 
 
 # False positive rate
 41/(41+4431)
+2439/(2439+5522)
 
 # AUC/ROC
 
@@ -1408,15 +1410,15 @@ fit_af_rfe <- fitted(glm_af_rfe)
 roc_train_af_rfe <- roc(train_all$class, fit_af_rfe)
 ggroc(roc_train_af_rfe)
 auc(roc_train_af_rfe)
-# Area under the curve: 0.5025
+# Area under the curve: 0.5025, 0.9504
 
 # ROC Test
 roc_test_af_rfe <- roc(validation_outcome$class, glm_probs_af_rfe)
 ggroc(list(train=roc_train_af_rfe, test=roc_test_af_rfe), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression on All Features with Highly Correlated featured removed") +
+  ggtitle("ROC of Logistic Regression on RFE all Features with Highly Correlated featured removed") +
   labs(color = "")
 auc(roc_test_af_rfe)
-# Area under the curve: 0.5181
+# Area under the curve: 0.5181, 0.8344
 
 
 
