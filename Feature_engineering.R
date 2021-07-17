@@ -812,6 +812,42 @@ lvq_features_transf <- row.names(lvq_sorted)[1:20]
 # Since we have this warning, let us remove Local_15 feature
 
 
+
+### LVQ on ALL data (AF) ###
+
+lvq_train_af <- train_af
+
+set.seed(2021)
+
+# prepare training scheme
+control_lvq <- trainControl(method="repeatedcv", number=5, repeats=3)
+
+# train the model
+lvq_model <- train(class ~., data=lvq_train_af, 
+                   method="lvq", 
+                   preProcess="scale", 
+                   trControl=control_lvq)
+lvq_model
+
+# estimate variable importance
+lvq_importance <- varImp(lvq_model, scale=FALSE)
+
+# summarize importance
+# Rank Features By Importance
+print(lvq_importance)
+
+# plot importance
+plot(lvq_importance, main="Feature Selection of All data with LVQ")
+
+# sort all features by rank of importance
+lvq_sorted <- as.data.frame(lvq_importance$importance)
+lvq_sorted <- lvq_sorted[order(-lvq_sorted$X1),]
+print(lvq_sorted)
+
+# get 20 most important LVQ features
+lvq_features <- row.names(lvq_sorted)[1:20]
+
+
 ### Correlation on All Features ###
 
 features_af <- train_af %>% select(-class) # directly from "Transformation.R"
