@@ -683,7 +683,7 @@ auc(roc_rf_af_test)
 
 
 ## Random Forest on All Features AF + RFE (20 variables) ##
-## Random Forest on All Features AF + RFE + CORR (Highly Correlated features removed) ( variables) ##
+## Random Forest on All Features AF + RFE + CORR (Highly Correlated features removed) (15 variables) ##
 
 # Data Preprocessing
 set.seed(2021)
@@ -694,20 +694,20 @@ valid_all <- valid_af %>% select(c(class, all_of(rfe_20))) # directly from "Feat
 
 validation_af_features <- valid_all %>% select(-class) # features
 
-# CORR (Highly Correlated features removed) - all features (87 features)
-# train_all <- train_af_corr # directly from "Feature_engineering.R"
-# validation_af_features <- valid_af_corr %>% select(-class) # features
+# RFE + CORR (Highly Correlated features removed) - all features (15 features)
+train_all <- df_af_train # directly from "Feature_engineering.R"
+validation_af_features <- df_af_valid %>% select(-class) # 15 features
 
 # fit the model
-rand_forest_af <- randomForest(class~., data = train_all, mtry = 4, importance =TRUE)
-# mtry = √p = √20 = 4 (rounded down) - RFE on all features
-# mtry = √p = √ =  (rounded down) - RFE on all Features with Highly Correlated features removed
+rand_forest_af <- randomForest(class~., data = train_all, mtry = 3, importance =TRUE)
+# mtry = √p = √20 = 4 (rounded down) - RFE on all features (20 features)
+# mtry = √p = √15 = 3 (rounded down) - RFE + CORR (15 features)
 rand_forest_af
 
 # variable importances for an object created by randomForest
 rf_var_imp_af <- data.frame(importance(rand_forest_af))
 varImpPlot(rand_forest_af, 
-           main = "Variable Importance plot with RFE on All features")
+           main = "Variable Importance plot with RFE on All features and Highly Correlated features removed")
 
 preds_rand_forest_af <- predict(rand_forest_af, newdata = validation_af_features)
 
@@ -720,12 +720,12 @@ rf_evaluation_af
 
 #               Reference     #               Reference
 #    Prediction    1    2     #    Prediction    1    2
-#             1  960   78     #             1  
-#             2   99 7862     #             2   
+#             1  960   78     #             1  959   79
+#             2   99 7862     #             2   48 7913
 
 # false positive rate
-78 / (78+7862) # RFE on all features (20 features)
-226 / (226+7950) # all features with Highly Correlated features removed (87 features)
+78 / (78+7862) # RFE on AF (20 features)
+79 / (79+7913) # RFE on AF with Highly Correlated features removed (15 features)
 
 # ROC Train
 preds_rand_forest_af_roc <- predict(rand_forest_af, 
@@ -734,15 +734,15 @@ preds_rand_forest_af_roc <- predict(rand_forest_af,
 roc_rf_af_train <- roc(train_all$class, rand_forest_af$votes[,2])
 ggroc(roc_rf_af_train)
 auc(roc_rf_af_train)
-# 0.9967
+# 0.9967, 0.9975
 
 # ROC Test
 roc_rf_af_test <- roc(valid_all$class, preds_rand_forest_af_roc[,1])
 ggroc(list(train=roc_rf_af_train, test=roc_rf_af_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Random Forest with RFE on All features") +
+  ggtitle("ROC of Random Forest with RFE on All features and Highly Correlated features removed") +
   labs(color = "")
 auc(roc_rf_af_test)
-# 0.9863
+# 0.9863, 0.9887
 
 
 
