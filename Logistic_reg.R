@@ -1431,11 +1431,14 @@ auc(roc_test_af_rfe)
 
 
 ### Fit Logistic Regression to AF + LVQ ###
+### Fit Logistic Regression to AF + LVQ + CORR ###
 
 # first, let us run Logistic Regression on AF + LVQ (20 features)
 lvq_train <- train_af[, c("class", lvq_features)] # directly from "Feature_engineering.R"
 
-## re-run with unimportant features removed (UFR) (4 IF) ##
+## re-run with AF + LVQ + CORR (10 features) ##
+lvq_train <- train_lvq_corr # directly from "Feature_engineering.R"
+
 # keep only important features at 0.05 significance level (16 features)
 # unimportant_features <- c("Local_16", "Local_43", "Local_64", "Local_71")
 
@@ -1446,7 +1449,8 @@ lvq_train <- train_af[, c("class", lvq_features)] # directly from "Feature_engin
 lvq_validation_features <- valid_af[, lvq_features] # predictor variables
 lvq_validation_outcome <- valid_af %>% select(class) # outcome
 
-## re-run with unimportant features removed (UFR) (4 IF) ##
+## re-run with AF + LVQ + CORR (10 features) ##
+lvq_validation_features <- valid_lvq_corr # directly from "Feature_engineering.R"
 # lvq_validation_features <- lvq_validation_features %>% select(-unimportant_features)
 
 ## fit the GLM model
@@ -1487,12 +1491,12 @@ lvq_glm_evaluation
 
 #                Reference
 #  Prediction    1    2
-#           1  
-#           2  
+#           1  711   75
+#           2  327 7886
 
 # false positive rate
-139 / (139 + 7822)
-11 / (11 + 7950)
+139 / (139 + 7822) # AF + LVQ (20 features)
+75 / (75 + 7886) # AF + LVQ + CORR (10 features)
 
 # AUC/ROC
 
@@ -1501,15 +1505,15 @@ fit_lvq <- fitted(glm_lvq)
 roc_lvq_train <- roc(lvq_train$class, fit_lvq)
 ggroc(roc_lvq_train)
 auc(roc_lvq_train)
-# Area under the curve: 0.5045, 
+# Area under the curve: 0.5045, 0.9429
 
 # ROC Test
 roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_probs)
 ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with LVQ on all features") +
+  ggtitle("ROC of Logistic Regression with LVQ on all features with Highly Correlated features removed") +
   labs(color = "")
 auc(roc_lvq_test)
-# Area under the curve: 0.5963
+# Area under the curve: 0.5963, 0.9041
 
 
 
