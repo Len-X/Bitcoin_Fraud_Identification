@@ -814,6 +814,7 @@ lvq_features_transf <- row.names(lvq_sorted)[1:20]
 
 
 ### LVQ on ALL data (AF) ###
+### AF + LVQ + CORR ###
 
 lvq_train_af <- train_af
 
@@ -846,6 +847,24 @@ print(lvq_sorted)
 
 # get 20 most important LVQ features
 lvq_features <- row.names(lvq_sorted)[1:20]
+lvq_train_features <- train_af[, lvq_features]
+
+# remove highly correlated features (AF+LVQ+CORR)
+# Spearman Correlation
+spearman_cor = round(cor(lvq_train_features, method = c("spearman")), 2)
+
+spearman_cor_heatmap <- ggcorrplot(spearman_cor, type = "full",
+                                   lab_size=1, tl.cex=10, tl.srt=90) +
+  ggtitle("Spearman Correlation Matrix of LVQ on all Features") +
+  theme(plot.title = element_text(hjust=0.5))
+
+spearman_cor_heatmap
+
+# remove highly correlated features
+lvq_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE) # (10 features)
+train_lvq_corr <- lvq_train %>% select(-lvq_to_remove) # (10 features)
+valid_lvq_corr <- lvq_validation_features %>% select(-lvq_to_remove) # (10 features)
+
 
 
 ### Correlation on All Features ###
