@@ -618,4 +618,70 @@ auc(roc_rf_lf_tr_test)
 
 
 
+## Random Forest on All Features AF (Local + Aggregated) ##
+
+# Data Preprocessing
+set.seed(2021)
+
+# all Local transformed features
+train_all <- train_af # directly from "Transformation.R"
+valid_all <- valid_af # directly from "Transformation.R"
+
+validation_af_features <- valid_all %>% select(-class) # features
+
+# CORR (Highly Correlated features removed) - all features
+# transf_train_lf <- df_lf_transf # directly from "Feature_engineering.R"
+# validation_lf_features <- df_lf_transf_valid %>% select(-class) # features
+
+# fit the model
+rand_forest_af <- randomForest(class~., data = train_all, mtry = 12, importance =TRUE)
+# mtry = √p = √165 = 12 (rounded down) - all features
+# mtry = √p = 6 (rounded down) - all Local Features with Highly Correlated features removed
+rand_forest_af
+
+# variable importances for an object created by randomForest
+rf_var_imp_af <- data.frame(importance(rand_forest_af))
+varImpPlot(rand_forest_af, 
+           main = "Variable Importance plot - all features")
+
+preds_rand_forest_af <- predict(rand_forest_af, newdata = validation_af_features)
+
+# relevel classes to make "1" first
+# preds_rand_forest_lf_tr <- relevel(preds_rand_forest_lf_tr, "1")
+
+# Classification Matrix
+conf_matrix_af <- confusionMatrix(valid_af$class, preds_rand_forest_af, positive = "1")
+conf_matrix_af
+
+rf_evaluation_af <- data.frame(conf_matrix_af$byClass)
+rf_evaluation_af
+
+#               Reference     #               Reference
+#    Prediction    1    2     #    Prediction    1    2
+#             1  967   71     #             1  
+#             2   19 7942     #             2   
+
+# false positive rate
+71 / (71+7942) # all features
+568 / (568+7958) # all features with Highly Correlated features removed
+
+# ROC Train
+preds_rand_forest_af_roc <- predict(rand_forest_af, 
+                                       newdata = validation_af_features, 
+                                       type="prob")
+roc_rf_af_train <- roc(train_all$class, rand_forest_af$votes[,2])
+ggroc(roc_rf_af_train)
+auc(roc_rf_af_train)
+# 0.9979
+
+# ROC Test
+roc_rf_af_test <- roc(valid_all$class, preds_rand_forest_af_roc[,1])
+ggroc(list(train=roc_rf_af_train, test=roc_rf_af_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Random Forest - all features") +
+  labs(color = "")
+auc(roc_rf_af_test)
+# 0.9894
+
+
+
 
