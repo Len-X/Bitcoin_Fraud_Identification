@@ -1432,6 +1432,7 @@ auc(roc_test_af_rfe)
 
 ### Fit Logistic Regression to AF + LVQ ###
 ### Fit Logistic Regression to AF + LVQ + CORR ###
+### Fit Logistic Regression to AF + LVQ + CORR + IF ###
 
 # first, let us run Logistic Regression on AF + LVQ (20 features)
 lvq_train <- train_af[, c("class", lvq_features)] # directly from "Feature_engineering.R"
@@ -1439,10 +1440,10 @@ lvq_train <- train_af[, c("class", lvq_features)] # directly from "Feature_engin
 ## re-run with AF + LVQ + CORR (10 features) ##
 lvq_train <- train_lvq_corr # directly from "Feature_engineering.R"
 
-# keep only important features at 0.05 significance level (16 features)
-# unimportant_features <- c("Local_16", "Local_43", "Local_64", "Local_71")
+# keep only important features at 0.05 significance level (7 features)
+unimportant_features <- c("Local_25", "Local_91", "Aggregated_49")
 
-# lvq_train <- lvq_train %>% select(-unimportant_features)
+lvq_train <- lvq_train %>% select(-unimportant_features)
 # now all 16 features are important!
 
 # transform Validation data into the same shape as train data
@@ -1451,7 +1452,9 @@ lvq_validation_outcome <- valid_af %>% select(class) # outcome
 
 ## re-run with AF + LVQ + CORR (10 features) ##
 lvq_validation_features <- valid_lvq_corr # directly from "Feature_engineering.R"
-# lvq_validation_features <- lvq_validation_features %>% select(-unimportant_features)
+
+# keep only important features at 0.05 significance level (7 features)
+lvq_validation_features <- lvq_validation_features %>% select(-unimportant_features)
 
 ## fit the GLM model
 
@@ -1491,12 +1494,13 @@ lvq_glm_evaluation
 
 #                Reference
 #  Prediction    1    2
-#           1  711   75
-#           2  327 7886
+#           1  711   75      ## 712   80
+#           2  327 7886      ## 326 7881
 
 # false positive rate
 139 / (139 + 7822) # AF + LVQ (20 features)
 75 / (75 + 7886) # AF + LVQ + CORR (10 features)
+80 / (80 + 7881) # AF + LVQ + CORR + IF (7 features)
 
 # AUC/ROC
 
@@ -1505,15 +1509,15 @@ fit_lvq <- fitted(glm_lvq)
 roc_lvq_train <- roc(lvq_train$class, fit_lvq)
 ggroc(roc_lvq_train)
 auc(roc_lvq_train)
-# Area under the curve: 0.5045, 0.9429
+# Area under the curve: 0.5045, 0.9429, 0.943
 
 # ROC Test
 roc_lvq_test <- roc(lvq_validation_outcome$class, lvq_glm_probs)
 ggroc(list(train=roc_lvq_train, test=roc_lvq_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Logistic Regression with LVQ on all features with Highly Correlated features removed") +
+  ggtitle("ROC of Logistic Regression with LVQ on all features, Highly Correlated and unimportant features removed") +
   labs(color = "")
 auc(roc_lvq_test)
-# Area under the curve: 0.5963, 0.9041
+# Area under the curve: 0.5963, 0.9041, 0.9045
 
 
 
