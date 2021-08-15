@@ -5,6 +5,7 @@ library(tidyverse)
 library(ggplot2)
 suppressPackageStartupMessages(library(keras))
 library(tensorflow)
+library(pROC)
 
 
 # Neural Network on Local Features
@@ -61,6 +62,7 @@ model %>%
   layer_dense(units = 64, activation = "relu") %>%
   layer_dense(units = 2, activation = "softmax")
 
+# 2nd model with Dropout
 model_2 %>%
   layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
   layer_dropout(0.5) %>%
@@ -134,32 +136,10 @@ plot(history)
 print(history_2)
 plot(history_2)
 
-# plot the model loss of the training data (baseline model)
-plot(history$metrics$loss, main="Baseline Model Loss", 
-     xlab = "epoch", 
-     ylab="loss", 
-     col="coral", 
-     type="l",
-     ylim = c(0,1), lwd = 2)
-# plot the model loss of the test data
-lines(history$metrics$val_loss, col="darkturquoise", lwd = 2)
-# add legend
-legend("topright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
-
-# plot the model accuracy of the training data (baseline model)
-plot(history$metrics$acc, main="Baseline Model Accuracy", 
-     xlab = "epoch", 
-     ylab="loss", 
-     col="coral", 
-     type="l",
-     ylim = c(0.6, 1), lwd = 2)
-# model accuracy of the test data
-lines(history$metrics$val_acc, col="darkturquoise", lwd = 2)
-legend("bottomright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
-
 # make predictions for the validation data, baseline model
 predictions <- model %>% predict_classes(x_valid, batch_size = 128)
 probabilities <- model %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train <- model %>% predict_proba(x_train) %>% as.data.frame()
 
 # make predictions for the validation data, 2-nd model
 predictions_2 <- model_2 %>% predict_classes(x_valid, batch_size = 128)
@@ -198,11 +178,13 @@ print(score)    # baseline model
 print(score_2)  # 2-nd model
 
 # ROC Test for baseline model
+roc_train <- roc(train_lf$class, probabilities_train$V1)
 roc_test <- roc(valid_lf$class, probabilities$V1)
-ggroc(list(Validation = roc_test), legacy.axes = TRUE) +
-  ggtitle("ROC of ANN with Local features") +
+ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
+  ggtitle("ROC of Baseline ANN with Local features") +
   labs(color = "")
-auc(roc_test)
+auc(roc_train) # 0.9991
+auc(roc_test) # 0.937
 
 # ROC Test for 2-nd model
 roc_test_2 <- roc(valid_lf$class, probabilities_2$V1)
@@ -213,6 +195,30 @@ auc(roc_test_2)
 
 
 
+## Compare the models
+
+# plot the model loss of the training data (baseline model)
+plot(history$metrics$loss, main="Baseline Model Loss", 
+     xlab = "epoch", 
+     ylab="loss", 
+     col="coral", 
+     type="l",
+     ylim = c(0,1), lwd = 2)
+# plot the model loss of the test data
+lines(history$metrics$val_loss, col="darkturquoise", lwd = 2)
+# add legend
+legend("topright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
+
+# plot the model accuracy of the training data (baseline model)
+plot(history$metrics$acc, main="Baseline Model Accuracy", 
+     xlab = "epoch", 
+     ylab="loss", 
+     col="coral", 
+     type="l",
+     ylim = c(0.6, 1), lwd = 2)
+# model accuracy of the test data
+lines(history$metrics$val_acc, col="darkturquoise", lwd = 2)
+legend("bottomright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
 
 
 
