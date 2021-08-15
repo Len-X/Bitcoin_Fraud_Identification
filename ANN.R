@@ -64,9 +64,9 @@ model %>%
 
 # 2nd model with Dropout
 model_2 %>%
-  layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dense(units = 256, activation = "relu", input_shape = ncol(x_train)) %>%
   layer_dropout(0.5) %>%
-  layer_dense(units = 128, activation = "relu") %>%
+  layer_dense(units = 256, activation = "relu") %>%
   layer_dropout(0.5) %>%
   layer_dense(units = 64, activation = "relu") %>%
   layer_dropout(0.5) %>%
@@ -144,6 +144,7 @@ probabilities_train <- model %>% predict_proba(x_train) %>% as.data.frame()
 # make predictions for the validation data, 2-nd model
 predictions_2 <- model_2 %>% predict_classes(x_valid, batch_size = 128)
 probabilities_2 <- model_2 %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train_2 <- model_2 %>% predict_proba(x_train) %>% as.data.frame()
 
 # swap levels in predictions. Make 1 first
 predictions <- relevel((as.factor(predictions)), "1")
@@ -187,11 +188,77 @@ auc(roc_train) # 0.9991
 auc(roc_test) # 0.937
 
 # ROC Test for 2-nd model
+roc_train_2 <- roc(train_lf$class, probabilities_train_2$V1)
 roc_test_2 <- roc(valid_lf$class, probabilities_2$V1)
-ggroc(list(Validation = roc_test_2), legacy.axes = TRUE) +
-  ggtitle("ROC of ANN with Local features") +
+ggroc(list(Train = roc_train_2, Validation = roc_test_2), legacy.axes = TRUE) +
+  ggtitle("ROC of 2nd ANN model with Local features") +
   labs(color = "")
-auc(roc_test_2)
+auc(roc_train_2) # 0.9975
+auc(roc_test_2) # 0.9846
+
+
+# ANN 3rd model with L2-regularization
+
+model_3 <- keras_model_sequential() # 3rd model
+
+# set model with λ value = 0.001
+model_3 %>%
+  layer_dense(units = 256, activation = "relu", input_shape = ncol(x_train),
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dense(units = 256, activation = "relu",
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dense(units = 64, activation = "relu",
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dense(units = 2, activation = "softmax")
+
+summary(model_3)
+
+# compile the 3rd model
+model_3 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = "adam",
+  metrics = "accuracy")
+
+# fit the baseline model and store the fitting history
+history_3 <- model_3 %>% fit(
+  x_train, 
+  y_train, 
+  epochs = 100, 
+  batch_size = 128,
+  validation_data = list(x_valid, y_valid),
+  verbose = 1)
+
+print(history_3)
+plot(history_3)
+
+# make predictions for the validation data, 3rd model
+predictions_3 <- model_3 %>% predict_classes(x_valid, batch_size = 128)
+probabilities_3 <- model_3 %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train_3 <- model_3 %>% predict_proba(x_train) %>% as.data.frame()
+
+# swap levels in predictions. Make 1 first
+predictions_3 <- relevel((as.factor(predictions_3)), "1")
+table(predictions_3)
+
+# confusion matrix
+conf_matrix_3 <- confusionMatrix(valid_lf$class, predictions_3)
+conf_matrix_3
+
+# evaluation by class
+evaluation_3 <- data.frame(conf_matrix_3$byClass)
+evaluation_3
+
+score_3 <- model_3 %>% evaluate(x_valid, y_valid, batch_size = 128)
+print(score_3)
+
+# ROC Test for 3rd model
+roc_train_3 <- roc(train_lf$class, probabilities_train_3$V1)
+roc_test_3 <- roc(valid_lf$class, probabilities_3$V1)
+ggroc(list(Train = roc_train_3, Validation = roc_test_3), legacy.axes = TRUE) +
+  ggtitle("ROC of 3rd ANN model with Local features") +
+  labs(color = "")
+auc(roc_train_3) 
+auc(roc_test_3) 
 
 
 
