@@ -260,6 +260,19 @@ ggroc(list(Train = roc_train_3, Validation = roc_test_3), legacy.axes = TRUE) +
 auc(roc_train_3) 
 auc(roc_test_3) 
 
+# safe and load the models
+
+# baseline model
+save_model_hdf5(model, "baseline_model.h5")
+model <- load_model_hdf5("baseline_model.h5")
+
+# 2nd model
+save_model_hdf5(model_2, "2nd_model.h5")
+model_2 <- load_model_hdf5("2nd_model.h5")
+
+# 3rd model
+save_model_hdf5(model_3, "3rd_model.h5")
+model_3 <- load_model_hdf5("3rd_model.h5")
 
 
 ## Compare the models
