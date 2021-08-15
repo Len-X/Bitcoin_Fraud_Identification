@@ -134,6 +134,29 @@ plot(history)
 print(history_2)
 plot(history_2)
 
+# plot the model loss of the training data (baseline model)
+plot(history$metrics$loss, main="Baseline Model Loss", 
+     xlab = "epoch", 
+     ylab="loss", 
+     col="coral", 
+     type="l",
+     ylim = c(0,1), lwd = 2)
+# plot the model loss of the test data
+lines(history$metrics$val_loss, col="darkturquoise", lwd = 2)
+# add legend
+legend("topright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
+
+# plot the model accuracy of the training data (baseline model)
+plot(history$metrics$acc, main="Baseline Model Accuracy", 
+     xlab = "epoch", 
+     ylab="loss", 
+     col="coral", 
+     type="l",
+     ylim = c(0.6, 1), lwd = 2)
+# model accuracy of the test data
+lines(history$metrics$val_acc, col="darkturquoise", lwd = 2)
+legend("bottomright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
+
 # make predictions for the validation data, baseline model
 predictions <- model %>% predict_classes(x_valid, batch_size = 128)
 probabilities <- model %>% predict_proba(x_valid) %>% as.data.frame()
