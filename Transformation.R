@@ -9,7 +9,7 @@ library(ggplot2)
 library(caret)
 library(bestNormalize)
 library(ROSE)
-library(DMwR) # SMOTE sampling
+# library(DMwR) # SMOTE sampling
 
 ### Data Preprocessing ###
 
