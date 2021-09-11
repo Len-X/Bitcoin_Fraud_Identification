@@ -301,5 +301,11 @@ table(train_rose_lf$class)
 # 13061 13320 
 
 
+### Using weights for the imbalanced data ###
+
+# checking current proportion of classes
+prop.table(table(train_lf$class)) # train
+prop.table(table(valid_lf$class)) # validation
+prop.table(table(test_lf$class)) # test
 
 
