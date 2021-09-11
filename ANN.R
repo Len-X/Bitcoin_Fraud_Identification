@@ -184,8 +184,8 @@ roc_test <- roc(valid_lf$class, probabilities$V1)
 ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
   ggtitle("ROC of Baseline ANN with Local features") +
   labs(color = "")
-auc(roc_train) # 0.9991
-auc(roc_test) # 0.937
+auc(roc_train) # 0.9991, 0.9997
+auc(roc_test) # 0.937, 0.9373
 
 # ROC Test for 2-nd model
 roc_train_2 <- roc(train_lf$class, probabilities_train_2$V1)
@@ -266,13 +266,25 @@ auc(roc_test_3)
 save_model_hdf5(model, "baseline_model.h5")
 model <- load_model_hdf5("baseline_model.h5")
 
+# save history as df and safe to csv
+history_df_baseline <- as.data.frame(history)
+write.csv(history_df_baseline, "history_df_baseline.csv", row.names = FALSE)
+
 # 2nd model
 save_model_hdf5(model_2, "2nd_model.h5")
 model_2 <- load_model_hdf5("2nd_model.h5")
 
+# save history as df and safe to csv
+history_df_2 <- as.data.frame(history_2)
+write.csv(history_df_2, "history_df_2.csv", row.names = FALSE)
+
 # 3rd model
 save_model_hdf5(model_3, "3rd_model.h5")
 model_3 <- load_model_hdf5("3rd_model.h5")
+
+# save history as df and safe to csv
+history_df_3 <- as.data.frame(history_3)
+write.csv(history_df_3, "history_df_3.csv", row.names = FALSE)
 
 
 ## Compare the models
