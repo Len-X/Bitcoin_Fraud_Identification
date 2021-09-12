@@ -321,6 +321,74 @@ ggroc(list(Train = roc_train_4, Validation = roc_test_4), legacy.axes = TRUE) +
 auc(roc_train_4) # 0.999
 auc(roc_test_4) # 0.9814
 
+
+# ANN 5th model with L2-regularization and Dropout (0.5)
+
+model_5 <- keras_model_sequential() # 5th model
+
+# set model with λ value = 0.001 and dropout rate 0.5
+model_5 %>%
+  layer_dense(units = 256, activation = "relu", input_shape = ncol(x_train),
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dropout(0.5) %>%
+  layer_dense(units = 256, activation = "relu",
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dropout(0.5) %>%
+  layer_dense(units = 64, activation = "relu",
+              kernel_regularizer = regularizer_l2(l = 0.001)) %>%
+  layer_dropout(0.5) %>%
+  layer_dense(units = 2, activation = "softmax")
+
+summary(model_5)
+
+# compile the 5th model
+model_5 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = "adam",
+  metrics = "accuracy")
+
+# fit the baseline model and store the fitting history
+history_5 <- model_5 %>% fit(
+  x_train, 
+  y_train, 
+  epochs = 100, 
+  batch_size = 128,
+  validation_data = list(x_valid, y_valid),
+  verbose = 1)
+
+print(history_5)
+plot(history_5)
+
+# make predictions for the validation data, 5th model
+predictions_5 <- model_5 %>% predict_classes(x_valid, batch_size = 128)
+probabilities_5 <- model_5 %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train_5 <- model_5 %>% predict_proba(x_train) %>% as.data.frame()
+
+# swap levels in predictions. Make 1 first
+predictions_5 <- relevel((as.factor(predictions_5)), "1")
+table(predictions_5)
+
+# confusion matrix
+conf_matrix_5 <- confusionMatrix(valid_lf$class, predictions_5)
+conf_matrix_5
+
+# evaluation by class
+evaluation_5 <- data.frame(conf_matrix_5$byClass)
+evaluation_5
+
+score_5 <- model_5 %>% evaluate(x_valid, y_valid, batch_size = 128)
+print(score_5)
+
+# ROC Test for 5th model
+roc_train_5 <- roc(train_lf$class, probabilities_train_5$V1)
+roc_test_5 <- roc(valid_lf$class, probabilities_5$V1)
+ggroc(list(Train = roc_train_5, Validation = roc_test_5), legacy.axes = TRUE) +
+  ggtitle("ROC of 5th ANN model with Local features") +
+  labs(color = "")
+auc(roc_train_5) # 0.9879
+auc(roc_test_5) # 0.9793
+
+
 # safe and load the models
 
 # baseline model
