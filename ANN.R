@@ -262,7 +262,7 @@ auc(roc_test_3)
 
 
 # ANN 4th model with Class Weights
-# 100% of class 1 (fraud) and 11% of class 0 (non-fraud)
+# 1st iter - 100 instances of class 1 (fraud) and 10 instances of class 0 (non-fraud)
 
 model_4 <- keras_model_sequential() # 4th model
 # use same architecture as with baseline
@@ -318,8 +318,8 @@ roc_test_4 <- roc(valid_lf$class, probabilities_4$V1)
 ggroc(list(Train = roc_train_4, Validation = roc_test_4), legacy.axes = TRUE) +
   ggtitle("ROC of 4th ANN model with Local features") +
   labs(color = "")
-auc(roc_train_4) 
-auc(roc_test_4)
+auc(roc_train_4) # 0.999
+auc(roc_test_4) # 0.9814
 
 # safe and load the models
 
@@ -353,7 +353,7 @@ model_4 <- load_model_hdf5("4th_model.h5")
 
 # save history as df and safe to csv
 history_df_4 <- as.data.frame(history_4)
-write.csv(history_df_4, "history_df_4.csv", row.names = FALSE)
+write.csv(history_df_4, "history_df_4_1st_iter.csv", row.names = FALSE)
 
 
 ## Compare the models
