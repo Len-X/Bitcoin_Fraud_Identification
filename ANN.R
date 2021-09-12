@@ -105,7 +105,7 @@ model %>% compile(
   optimizer = "adam",
   metrics = "accuracy")
 
-# compile the 2-nd model
+# compile the 2nd model
 model_2 %>% compile(
   loss = "binary_crossentropy",
   optimizer = "adam",
@@ -120,7 +120,7 @@ history <- model %>% fit(
   validation_data = list(x_valid, y_valid),
   verbose = 1)
 
-# fit the 2-nd model and store the fitting history
+# fit the 2nd model and store the fitting history
 history_2 <- model_2 %>% fit(
   x_train, 
   y_train, 
@@ -178,7 +178,7 @@ score_2 <- model_2 %>% evaluate(x_valid, y_valid, batch_size = 128) # 2-nd model
 print(score)    # baseline model
 print(score_2)  # 2-nd model
 
-# ROC Test for baseline model
+# ROC Train/Validation for baseline model
 roc_train <- roc(train_lf$class, probabilities_train$V1)
 roc_test <- roc(valid_lf$class, probabilities$V1)
 ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
@@ -187,7 +187,7 @@ ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
 auc(roc_train) # 0.9991, 0.9997
 auc(roc_test) # 0.937, 0.9373
 
-# ROC Test for 2-nd model
+# ROC Train/Validation for 2-nd model
 roc_train_2 <- roc(train_lf$class, probabilities_train_2$V1)
 roc_test_2 <- roc(valid_lf$class, probabilities_2$V1)
 ggroc(list(Train = roc_train_2, Validation = roc_test_2), legacy.axes = TRUE) +
@@ -219,7 +219,7 @@ model_3 %>% compile(
   optimizer = "adam",
   metrics = "accuracy")
 
-# fit the baseline model and store the fitting history
+# fit the 3rd model and store the fitting history
 history_3 <- model_3 %>% fit(
   x_train, 
   y_train, 
@@ -251,7 +251,7 @@ evaluation_3
 score_3 <- model_3 %>% evaluate(x_valid, y_valid, batch_size = 128)
 print(score_3)
 
-# ROC Test for 3rd model
+# ROC Train/Validation for 3rd model
 roc_train_3 <- roc(train_lf$class, probabilities_train_3$V1)
 roc_test_3 <- roc(valid_lf$class, probabilities_3$V1)
 ggroc(list(Train = roc_train_3, Validation = roc_test_3), legacy.axes = TRUE) +
@@ -279,7 +279,7 @@ model_4 %>% compile(
   optimizer = "adam",
   metrics = "accuracy")
 
-# fit the baseline model and store the fitting history
+# fit the 4th model and store the fitting history
 history_4 <- model_4 %>% fit(
   x_train, 
   y_train, 
@@ -312,7 +312,7 @@ evaluation_4
 score_4 <- model_4 %>% evaluate(x_valid, y_valid, batch_size = 128)
 print(score_4)
 
-# ROC Test for 3rd model
+# ROC Train/Validation for 4th model
 roc_train_4 <- roc(train_lf$class, probabilities_train_4$V1)
 roc_test_4 <- roc(valid_lf$class, probabilities_4$V1)
 ggroc(list(Train = roc_train_4, Validation = roc_test_4), legacy.axes = TRUE) +
@@ -347,7 +347,7 @@ model_5 %>% compile(
   optimizer = "adam",
   metrics = "accuracy")
 
-# fit the baseline model and store the fitting history
+# fit the 5th model and store the fitting history
 history_5 <- model_5 %>% fit(
   x_train, 
   y_train, 
@@ -379,7 +379,7 @@ evaluation_5
 score_5 <- model_5 %>% evaluate(x_valid, y_valid, batch_size = 128)
 print(score_5)
 
-# ROC Test for 5th model
+# ROC Train/Validation for 5th model
 roc_train_5 <- roc(train_lf$class, probabilities_train_5$V1)
 roc_test_5 <- roc(valid_lf$class, probabilities_5$V1)
 ggroc(list(Train = roc_train_5, Validation = roc_test_5), legacy.axes = TRUE) +
@@ -458,8 +458,101 @@ lines(history$metrics$val_acc, col="darkturquoise", lwd = 2)
 legend("bottomright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
 
 
+## Neural Network on All Features (AF)
 
+# Data Preprocessing
+# load data from "Transformation.R"
+str(train_af) # train data, local features
+str(valid_af) # validation data, local features
 
+# predictor/outcome variables split
+x_train <- train_af %>%  # predictor variables
+  select(-class) %>%
+  as.matrix()
+
+x_valid <- valid_af %>%  # predictor variables
+  select(-class) %>%
+  as.matrix()
+
+# set positive class 1 as fraud and 0 as licit (non-fraud)
+levels(train_af$class) <- c(1, 0)
+levels(valid_af$class) <- c(1, 0)
+
+table(train_af$class)
+table(valid_af$class)
+
+y_train <- to_categorical(train_af$class)  # outcome/target variable
+y_valid <- to_categorical(valid_af$class)  # outcome/target variable
+
+# set "dimnames" to "NULL"
+dimnames(x_train) <- NULL
+dimnames(x_valid) <- NULL
+
+# ANN 6th model (based on baseline)
+
+model_6 <- keras_model_sequential() # 6th model
+# use same architecture as with baseline
+model_6 %>%
+  layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dense(units = 64, activation = "relu") %>%
+  layer_dense(units = 2, activation = "softmax")
+
+summary(model_6)
+
+# compile the 6th model
+model_6 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = "adam",
+  metrics = "accuracy")
+
+# fit the 6th model and store the fitting history
+history_6 <- model_6 %>% fit(
+  x_train, 
+  y_train, 
+  epochs = 100, 
+  batch_size = 128,
+  validation_data = list(x_valid, y_valid),
+  verbose = 1)
+
+print(history_6)
+plot(history_6)
+
+# make predictions for the validation data, 6th model
+predictions_6 <- model_6 %>% predict_classes(x_valid, batch_size = 128)
+probabilities_6 <- model_6 %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train_6 <- model_6 %>% predict_proba(x_train) %>% as.data.frame()
+
+# swap levels in predictions. Make 1 first
+predictions_6 <- relevel((as.factor(predictions_6)), "1")
+table(predictions_6)
+
+# confusion matrix
+conf_matrix_6 <- confusionMatrix(valid_lf$class, predictions_6)
+conf_matrix_6
+
+# evaluation by class
+evaluation_6 <- data.frame(conf_matrix_6$byClass)
+evaluation_6
+
+score_6 <- model_6 %>% evaluate(x_valid, y_valid, batch_size = 128)
+print(score_6)
+
+# ROC train / validation for 6th model
+roc_train_6 <- roc(train_lf$class, probabilities_train_6$V1)
+roc_test_6 <- roc(valid_lf$class, probabilities_6$V1)
+ggroc(list(Train = roc_train_6, Validation = roc_test_6), legacy.axes = TRUE) +
+  ggtitle("ROC of 6th ANN model with All features") +
+  labs(color = "")
+auc(roc_train_6) # 1
+auc(roc_test_6) # 0.9284
+
+# save and load 6th model
+save_model_hdf5(model_6, "6th_model.h5")
+model_6 <- load_model_hdf5("6th_model.h5")
+
+# save history as df and safe to csv
+history_df_6 <- as.data.frame(history_6)
+write.csv(history_df_6, "history_df_6_1st_iter.csv", row.names = FALSE)
 
 
 
