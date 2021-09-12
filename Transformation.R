@@ -13,7 +13,6 @@ library(ROSE)
 
 ### Data Preprocessing ###
 
-
 # load full df
 df <- read.csv("Bitcoin_Fraud_Identification/Data/Bitcoin_Full_df.csv")
 attach(df)

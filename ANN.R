@@ -423,6 +423,14 @@ model_4 <- load_model_hdf5("4th_model.h5")
 history_df_4 <- as.data.frame(history_4)
 write.csv(history_df_4, "history_df_4_1st_iter.csv", row.names = FALSE)
 
+# 5th model
+save_model_hdf5(model_5, "5th_model.h5")
+model_5 <- load_model_hdf5("5th_model.h5")
+
+# save history as df and safe to csv
+history_df_5 <- as.data.frame(history_5)
+write.csv(history_df_5, "history_df_5_1st_iter.csv", row.names = FALSE)
+
 
 ## Compare the models
 
