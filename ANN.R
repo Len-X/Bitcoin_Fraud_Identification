@@ -488,7 +488,7 @@ y_valid <- to_categorical(valid_af$class)  # outcome/target variable
 dimnames(x_train) <- NULL
 dimnames(x_valid) <- NULL
 
-# ANN 6th model (based on baseline)
+# ANN 6th model on AF (based on baseline)
 
 model_6 <- keras_model_sequential() # 6th model
 # use same architecture as with baseline
@@ -553,6 +553,104 @@ model_6 <- load_model_hdf5("6th_model.h5")
 # save history as df and safe to csv
 history_df_6 <- as.data.frame(history_6)
 write.csv(history_df_6, "history_df_6_1st_iter.csv", row.names = FALSE)
+
+
+# ANN 7th model on 20 AE features (derived from LF)
+# based on baseline architecture
+
+# load AE LF data + data preprocessing
+x_train_ae <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
+x_valid_ae <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
+
+# predictor/outcome variables split
+x_train <- x_train_ae %>%  # predictor variables
+  select(-class) %>%
+  as.matrix()
+
+x_valid <- x_valid_ae %>%  # predictor variables
+  select(-class) %>%
+  as.matrix()
+
+# set positive class 1 as fraud and 0 as licit (non-fraud)
+x_train_ae$class <- as.factor(x_train_ae$class)
+x_valid_ae$class <- as.factor(x_valid_ae$class)
+
+levels(x_train_ae$class) <- c(1, 0)
+levels(x_valid_ae$class) <- c(1, 0)
+
+table(x_train_ae$class)
+table(x_valid_ae$class)
+
+y_train <- to_categorical(x_train_ae$class)  # outcome/target variable
+y_valid <- to_categorical(x_valid_ae$class)  # outcome/target variable
+
+dimnames(x_train) <- NULL
+dimnames(x_valid) <- NULL
+
+## Build the NN model ##
+model_7 <- keras_model_sequential() # 7th model
+# use same architecture as with baseline
+model_7 %>%
+  layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dense(units = 64, activation = "relu") %>%
+  layer_dense(units = 2, activation = "softmax")
+
+summary(model_7)
+
+# compile the 7th model
+model_7 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = "adam",
+  metrics = "accuracy")
+
+# fit the 7th model and store the fitting history
+history_7 <- model_7 %>% fit(
+  x_train, 
+  y_train, 
+  epochs = 100, 
+  batch_size = 128,
+  validation_data = list(x_valid, y_valid),
+  verbose = 1)
+
+print(history_7)
+plot(history_7)
+
+# make predictions for the validation data, 6th model
+predictions_7 <- model_7 %>% predict_classes(x_valid, batch_size = 128)
+probabilities_7 <- model_7 %>% predict_proba(x_valid) %>% as.data.frame()
+probabilities_train_7 <- model_7 %>% predict_proba(x_train) %>% as.data.frame()
+
+# swap levels in predictions. Make 1 first
+predictions_7 <- relevel((as.factor(predictions_7)), "1")
+table(predictions_7)
+
+# confusion matrix
+conf_matrix_7 <- confusionMatrix(x_valid_ae$class, predictions_7)
+conf_matrix_7
+
+# evaluation by class
+evaluation_7 <- data.frame(conf_matrix_7$byClass)
+evaluation_7
+
+score_7 <- model_7 %>% evaluate(x_valid, y_valid, batch_size = 128)
+print(score_7)
+
+# ROC train / validation for 7th model
+roc_train_7 <- roc(x_train_ae$class, probabilities_train_7$V1)
+roc_test_7 <- roc(x_valid_ae$class, probabilities_7$V1)
+ggroc(list(Train = roc_train_7, Validation = roc_test_7), legacy.axes = TRUE) +
+  ggtitle("ROC of 7th ANN model with 20 Aeutoencoded Local features") +
+  labs(color = "")
+auc(roc_train_7) # 
+auc(roc_test_7) # 
+
+# save and load 7th model
+save_model_hdf5(model_7, "7th_model.h5")
+model_7 <- load_model_hdf5("7th_model.h5")
+
+# save history as df and safe to csv
+history_df_7 <- as.data.frame(history_7)
+write.csv(history_df_7, "history_df_7_1st_iter.csv", row.names = FALSE)
 
 
 
