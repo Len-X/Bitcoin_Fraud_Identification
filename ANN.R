@@ -641,8 +641,8 @@ roc_test_7 <- roc(x_valid_ae$class, probabilities_7$V1)
 ggroc(list(Train = roc_train_7, Validation = roc_test_7), legacy.axes = TRUE) +
   ggtitle("ROC of 7th ANN model with 20 Aeutoencoded Local features") +
   labs(color = "")
-auc(roc_train_7) # 
-auc(roc_test_7) # 
+auc(roc_train_7) # 0.9929
+auc(roc_test_7) # 0.9495
 
 # save and load 7th model
 save_model_hdf5(model_7, "7th_model.h5")
