@@ -207,10 +207,12 @@ set.seed(2021)
 
 # load AE train
 ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_train.csv")
+ae_train <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_AF_train.csv")
 ae_train$class<- as.factor(ae_train$class)
 
 # load AE validation
 ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_variables_valid.csv")
+ae_validation <- read.csv("Bitcoin_Fraud_Identification/Data/ae_20_AF_valid.csv")
 ae_validation$class<- as.factor(ae_validation$class)
 
 ae_validation_features <- ae_validation %>% select(-class) # predictor variables
