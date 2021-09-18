@@ -648,6 +648,10 @@ auc(roc_test_7) # 0.9495
 save_model_hdf5(model_7, "7th_model.h5")
 model_7 <- load_model_hdf5("7th_model.h5")
 
+# save history as df and safe to csv
+history_df_7 <- as.data.frame(history_7)
+write.csv(history_df_7, "history_df_7_1st_iter.csv", row.names = FALSE)
+
 
 # ANN 8th model on 20 AE features (derived from AF)
 # 1st iter based on baseline architecture
@@ -681,8 +685,8 @@ y_valid <- to_categorical(x_valid_ae$class)  # outcome/target variable
 dimnames(x_train) <- NULL
 dimnames(x_valid) <- NULL
 
-## Build the NN model ##
-model_8 <- keras_model_sequential() # 8th model
+## Build the 8th NN model ##
+model_8 <- keras_model_sequential()
 # use same architecture as with baseline
 model_8 %>%
   layer_dense(units = 128, activation = "relu", input_shape = ncol(x_train)) %>%
@@ -735,18 +739,16 @@ roc_test_8 <- roc(x_valid_ae$class, probabilities_8$V1)
 ggroc(list(Train = roc_train_8, Validation = roc_test_8), legacy.axes = TRUE) +
   ggtitle("ROC of 8th ANN model with 20 Aeutoencoded All features") +
   labs(color = "")
-auc(roc_train_7) # 
-auc(roc_test_7) # 
+auc(roc_train_8) # 0.9943
+auc(roc_test_8) # 0.9205
 
 # save and load 8th model
 save_model_hdf5(model_8, "8th_model.h5")
 model_8 <- load_model_hdf5("8th_model.h5")
 
-
 # save history as df and safe to csv
 history_df_8 <- as.data.frame(history_8)
 write.csv(history_df_8, "history_df_8_1st_iter.csv", row.names = FALSE)
-
 
 
 
