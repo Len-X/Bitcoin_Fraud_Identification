@@ -237,11 +237,12 @@ ae_rf_evaluation
 
 #               Reference
 #    Prediction    1    2
-#             1  793  245
-#             2   67 7894
+#             1  793  245     562  476
+#             2   67 7894      55 7906
 
 # false positive rate
 245 / (245+7894)
+476 / (476+7906)
 
 # ROC Train
 preds_rand_forest_ae_roc <- predict(rand_forest_ae, 
@@ -249,16 +250,14 @@ preds_rand_forest_ae_roc <- predict(rand_forest_ae,
                                     type="prob")
 roc_rf_ae_train <- roc(ae_train$class, rand_forest_ae$votes[,2])
 ggroc(roc_rf_ae_train)
-auc(roc_rf_ae_train)
-# 0.9851
+auc(roc_rf_ae_train) # 0.9851, 0.9834
 
 # ROC Test
 roc_rf_ae_test <- roc(ae_validation$class, preds_rand_forest_ae_roc[,2])
 ggroc(list(train=roc_rf_ae_train, test=roc_rf_ae_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Random Forest with Autoencoder features") +
+  ggtitle("ROC of Random Forest with Autoencoded All features") +
   labs(color = "")
-auc(roc_rf_ae_test)
-# 0.9757
+auc(roc_rf_ae_test) # 0.9757, 0.9601
 
 
 
