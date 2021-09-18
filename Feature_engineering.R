@@ -817,6 +817,7 @@ lvq_features_transf <- row.names(lvq_sorted)[1:20]
 ### AF + LVQ + CORR ###
 
 lvq_train_af <- train_af
+# lvq_train_af <- droplevels(lvq_train_af)
 
 set.seed(2021)
 
@@ -826,7 +827,7 @@ control_lvq <- trainControl(method="repeatedcv", number=5, repeats=3)
 # train the model
 lvq_model <- train(class ~., data=lvq_train_af, 
                    method="lvq", 
-                   preProcess="scale", 
+                   # preProcess="scale", 
                    trControl=control_lvq)
 lvq_model
 
