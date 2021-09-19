@@ -863,8 +863,9 @@ spearman_cor_heatmap
 
 # remove highly correlated features
 lvq_to_remove <- findCorrelation(spearman_cor, cutoff = 0.9, names=TRUE) # (10 features)
-train_lvq_corr <- lvq_train %>% select(-lvq_to_remove) # (10 features)
-valid_lvq_corr <- lvq_validation_features %>% select(-lvq_to_remove) # (10 features)
+train_lvq_corr <- lvq_train_features %>% select(-lvq_to_remove) # (10 features)
+# valid_lvq_corr <- lvq_validation_features %>% select(-lvq_to_remove) # (10 features)
+valid_lvq_corr <- valid_af[, lvq_features] %>% select(-lvq_to_remove) # (10 features)
 
 
 
