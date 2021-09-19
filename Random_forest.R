@@ -758,12 +758,12 @@ valid_all <- valid_af %>% select(c(class, all_of(lvq_features))) # directly from
 
 validation_af_features <- valid_all %>% select(-class) # features
 
-# RFE + CORR (Highly Correlated features removed) - all features (15 features)
-# train_all <- df_af_train # directly from "Feature_engineering.R"
-# validation_af_features <- df_af_valid %>% select(-class) # 15 features
+# LVQ + CORR (Highly Correlated features removed) - all features (15 features)
+train_all <- train_af %>% select(c(class, all_of(colnames(train_lvq_corr)))) # directly from "Feature_engineering.R"
+validation_af_features <- valid_lvq_corr # 10 features. Directly from "Feature_engineering.R"
 
 # fit the model
-rand_forest_af <- randomForest(class~., data = train_all, mtry = 4, importance =TRUE)
+rand_forest_af <- randomForest(class~., data = train_all, mtry = 3, importance =TRUE)
 # mtry = √p = √20 = 4 (rounded down) - RFE on all features (20 features)
 # mtry = √p = √10 = 3 (rounded down) - RFE + CORR (10 features)
 rand_forest_af
@@ -771,8 +771,7 @@ rand_forest_af
 # variable importances for an object created by randomForest
 rf_var_imp_af <- data.frame(importance(rand_forest_af))
 varImpPlot(rand_forest_af, 
-           main = "Variable Importance plot with LVQ on All features (top 20)")
-# "Variable Importance plot with LVQ on All features and Highly Correlated features removed"
+           main = "Variable Importance plot with LVQ on All features and Highly Correlated features removed")
 preds_rand_forest_af <- predict(rand_forest_af, newdata = validation_af_features)
 
 # Classification Matrix
@@ -784,12 +783,12 @@ rf_evaluation_af
 
 #               Reference     #               Reference
 #    Prediction    1    2     #    Prediction    1    2
-#             1  892  146     #             1  
-#             2   39 7922     #             2  
+#             1  892  146     #             1  875  163
+#             2   39 7922     #             2   39 7922
 
 # false positive rate
 146 / (146+7922) # LVQ on AF (20 features)
-79 / (79+7913) # LVQ on AF with Highly Correlated features removed (10 features)
+163 / (163+7913) # LVQ on AF with Highly Correlated features removed (10 features)
 
 # ROC Train
 preds_rand_forest_af_roc <- predict(rand_forest_af, 
@@ -797,15 +796,14 @@ preds_rand_forest_af_roc <- predict(rand_forest_af,
                                     type="prob")
 roc_rf_af_train <- roc(train_all$class, rand_forest_af$votes[,2])
 ggroc(roc_rf_af_train)
-auc(roc_rf_af_train) # 0.9949
+auc(roc_rf_af_train) # 0.9949, 0.9935
 
 # ROC Test
 roc_rf_af_test <- roc(valid_all$class, preds_rand_forest_af_roc[,1])
 ggroc(list(train=roc_rf_af_train, test=roc_rf_af_test), legacy.axes = TRUE) +
-  ggtitle("ROC of Random Forest with LVQ on All features (top 20)") +
-  # "ROC of Random Forest with LVQ on All features and Highly Correlated features removed"
+  ggtitle("ROC of Random Forest with LVQ on All features and Highly Correlated features removed") +
   labs(color = "")
-auc(roc_rf_af_test) # 0.985
+auc(roc_rf_af_test) # 0.985, 0.9844 
 
 
 
