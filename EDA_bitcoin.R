@@ -141,6 +141,31 @@ plot2
 p <- grid.arrange(plot1, plot2, nrow=2)
 p
 
+total_class <- full_df %>% 
+  count(TimeStep, class) %>%
+  add_count(TimeStep, wt = n, name = "total")
+
+# line plot of all transactions by class & total
+plot3 <- total_class %>%
+  ggplot(mapping = aes(x = TimeStep, y = n, color = class)) +
+  geom_line(aes(y = total, color = "total")) +
+  geom_line() +
+  geom_point() +
+  geom_point(aes(y = total, color = "total")) +
+  theme_bw()+
+  ggtitle("Number of transactions at each time step") +
+  ylab("Number of Transactions") +
+  xlab("Time Step") +
+  scale_x_continuous(breaks = seq(0, 50, by = 5)) +
+  scale_color_manual(values = c(total = "#F8766D", "#00BA38", "darkgrey", "#619CFF"),
+                     labels = c("Illicit", "Licit", "Total", "Unknown")) +
+  theme(axis.text.x = element_text(size=11)) +
+  theme(axis.text.y = element_text(size=11)) +
+  theme(legend.position = "right") + # "none"
+  theme(plot.title = element_text(hjust = 0.5))
+
+plot3
+
 # check for duplicate Tax Ids
 anyDuplicated(full_df$txId) # no duplicate txId values
 
@@ -212,13 +237,13 @@ lines(density(Local_10),col=2)
 
 
 # Class density
-plot3 <- ggplot(data=full_df, aes(x=TimeStep, group=class, fill=class)) +
+plot4 <- ggplot(data=full_df, aes(x=TimeStep, group=class, fill=class)) +
   geom_density(adjust=1.5, alpha=.4) +
   theme_ipsum()
-plot3
+plot4
 
 # Using small multiple
-plot4 <- ggplot(data=full_df, aes(x=TimeStep, group=class, fill=class)) +
+plot5 <- ggplot(data=full_df, aes(x=TimeStep, group=class, fill=class)) +
   geom_density(adjust=1.5, alpha=.4) +
   theme_ipsum() +
   facet_wrap(~class) +
@@ -226,14 +251,6 @@ plot4 <- ggplot(data=full_df, aes(x=TimeStep, group=class, fill=class)) +
     legend.position="none",
     panel.spacing = unit(0.1, "lines"),
     axis.ticks.x=element_blank())
-plot4
-
-
-### NOT SURE IF THIS IS A CORRECT WAY FOR VISUALIZING DENSITY PLOTS ###
-plot5 <- ggplot(data=full_df, aes(x=TimeStep, fill=Local_10)) +
-  geom_density(adjust=1.5, alpha=.4, fill="#69b3a2") +
-  ggtitle("Density plot of Local_10 feature") +
-  theme_ipsum()
 plot5
 
 
