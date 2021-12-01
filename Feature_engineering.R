@@ -178,7 +178,9 @@ print(df_boruta_aggregated)
 
 # autoencoder in Keras
 suppressPackageStartupMessages(library(keras))
-
+# install.packages("devtools")
+# devtools::install_github("andrie/deepviz")
+library(deepviz) # model visualization
 
 # set training data as matrix
 x_train_local <- train_local %>% 
@@ -243,7 +245,8 @@ model %>%
 
 # view model layers
 summary(model)
-
+# plot model
+model %>% plot_model()
 
 # compile model
 model %>% compile(

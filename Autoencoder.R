@@ -5,6 +5,7 @@
 library(tidyverse)
 library(ggplot2)
 suppressPackageStartupMessages(library(keras))
+library(deepviz)
 
 # Autoencoder on All Features (AF)
 
@@ -40,6 +41,8 @@ model_ae %>%
 
 # view model layers
 summary(model_ae)
+# plot model
+model_ae %>% plot_model()
 
 # compile model
 model_ae %>% compile(
