@@ -756,14 +756,12 @@ set.seed(2021)
 model_9 <- keras_model_sequential()
 
 model_9 %>%
-  layer_dense(units = 512, activation = "relu", input_shape = ncol(x_train)) %>%
-  layer_dropout(0.5) %>%
-  layer_dense(units = 256, activation = "relu") %>%
-  layer_dropout(0.5) %>%
-  layer_dense(units = 128, activation = "relu") %>%
-  layer_dropout(0.5) %>%
+  layer_dense(units = 64, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dropout(0.4) %>%
   layer_dense(units = 32, activation = "relu") %>%
-  layer_dropout(0.5) %>%
+  layer_dropout(0.2) %>%
+  layer_dense(units = 8, activation = "relu") %>%
+  layer_dropout(0.1) %>%
   layer_dense(units = 2, activation = "softmax")
 
 summary(model_9)
@@ -778,7 +776,7 @@ model_9 %>% compile(
 history_9 <- model_9 %>% fit(
   x_train, 
   y_train, 
-  epochs = 100, 
+  epochs = 20, #100
   batch_size = 128, # 128
   validation_data = list(x_valid, y_valid),
   verbose = 1)
@@ -805,17 +803,21 @@ evaluation_9
 
 score_9 <- model_9 %>% evaluate(x_valid, y_valid, batch_size = 128)
 print(score_9)
+#       loss   accuracy 
+# 0.08192353 0.98044229 
 
 # ROC Train/Validation for 9rd model
 roc_train_9 <- roc(train_lf$class, probabilities_train_9$V1)
 roc_test_9 <- roc(valid_lf$class, probabilities_9$V1)
 ggroc(list(Train = roc_train_9, Validation = roc_test_9), legacy.axes = TRUE) +
-  ggtitle("ROC of 9th ANN model with Local features") +
+  ggtitle("ROC of best ANN model with Local features") + # with HPO
   labs(color = "")
-auc(roc_train_9) 
-auc(roc_test_9) 
+auc(roc_train_9) # 0.9909
+auc(roc_test_9)  # 0.9839
 
-
+# save and load 9th model
+save_model_hdf5(model_9, "9th_model_hpo.h5")
+model_9 <- load_model_hdf5("9th_model_hpo.h5")
 
 
 
