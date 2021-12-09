@@ -106,7 +106,7 @@ hpo_flags <- list(
   lr = c(0.0001,0.001,0.01))
 
 hpo_runs <- tuning_run("Bitcoin_Fraud_Identification/ANN_HPO.R", sample = 0.1, 
-                       flags = hpo_flags)
+                        flags = hpo_flags)
 
 all_runs <- ls_runs(order = metric_val_accuracy, 
                     decreasing= TRUE, 
@@ -118,6 +118,5 @@ latest_run()
 # save to csv
 # write.csv(all_runs,"~/Desktop/Master/ann_hpo_runs.csv", 
 #           row.names = FALSE)
-
 
 
