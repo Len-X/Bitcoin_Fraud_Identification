@@ -46,11 +46,9 @@ FLAGS <- flags(
   flag_numeric('dropout1', 0.5),
   flag_numeric('dropout2', 0.5),
   flag_numeric('dropout3', 0.5),
-  flag_numeric('dropout4', 0.5),
   flag_integer('neurons1', 128),
   flag_integer('neurons2', 128),
   flag_integer('neurons3', 128),
-  flag_integer('neurons4', 128),
   flag_numeric('lr', 0.001))
 
 build_model <- function() {
@@ -64,8 +62,6 @@ build_model <- function() {
     layer_dropout(FLAGS$dropout2) %>%
     layer_dense(units = FLAGS$neurons3, activation = "relu") %>%
     layer_dropout(FLAGS$dropout3) %>%
-    layer_dense(units = FLAGS$neurons4, activation = "relu") %>%
-    layer_dropout(FLAGS$dropout4) %>%
     layer_dense(units = 2, activation = "softmax")
   
   model %>% compile(
@@ -101,21 +97,27 @@ print(score)
 # model tuning
 
 hpo_flags <- list(
-  dropout1 = c(0.3,0.4,0.5,0.6),
-  dropout2 = c(0.3,0.4,0.5,0.6),
-  dropout3 = c(0.3,0.4,0.5,0.6),
-  dropout4 = c(0.3,0.4,0.5,0.6),
-  neurons1 = c(64,128,256,512),
-  neurons2 = c(64,128,256),
-  neurons3 = c(64,128,256),
-  neurons4 = c(64,128,256),
-  lr = c(0.00001,0.0001,0.001,0.01))
+  dropout1 = c(0.4,0.5,0.6),
+  dropout2 = c(0.3,0.4, 0.5),
+  dropout3 = c(0.1, 0.2, 0.3),
+  neurons1 = c(64,128,256),
+  neurons2 = c(32,64,128),
+  neurons3 = c(8,32,64),
+  lr = c(0.0001,0.001,0.01))
 
 hpo_runs <- tuning_run("Bitcoin_Fraud_Identification/ANN_HPO.R", sample = 0.1, 
                        flags = hpo_flags)
+
+all_runs <- ls_runs(order = metric_val_accuracy, 
+                    decreasing= TRUE, 
+                    runs_dir = 'runs')
+
+best_run <- all_runs[1,]; best_run
+latest_run()
+
 # save to csv
-write.csv(hpo_runs,"~/Desktop/MASTERS/Bitcoin/ann_hpo_runs.csv", 
-          row.names = FALSE)
+# write.csv(all_runs,"~/Desktop/Master/ann_hpo_runs.csv", 
+#           row.names = FALSE)
 
 
 
