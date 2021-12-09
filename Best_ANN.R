@@ -71,6 +71,19 @@ table(train_lf_down$Class)
 
 #___________________________________________________________________
 
+# LF with up-sampling
+x_train <- train_lf_up %>%  # predictor variables
+  select(-Class) %>%
+  as.matrix()
+
+# set positive class 1 as fraud and 0 as licit (non-fraud)
+levels(train_lf_up$Class) <- c(1, 0)
+
+y_train <- to_categorical(train_lf_up$Class)  # outcome/target variable
+table(train_lf_up$Class)
+
+#___________________________________________________________________
+
 # set "dimnames" to "NULL"
 dimnames(x_train) <- NULL
 dimnames(x_valid) <- NULL
@@ -162,11 +175,11 @@ evaluation
 roc_train <- roc(train_lf$class, probabilities_train$V1)
 roc_test <- roc(valid_lf$class, probabilities$V1)
 ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
-  ggtitle("ROC of best ANN model with all features") +
+  ggtitle("ROC of best ANN model with Local features") +
   labs(color = "")
-auc(roc_train) # 0.988, 0.9965, 0.9937 
-auc(roc_test) # 0.9812, 0.9668, 0.9624
+auc(roc_train) # 0.988, 0.9965, 0.9937, 0.9833, 0.9929
+auc(roc_test) # 0.9812, 0.9668, 0.9624, 0.9770, 0.9837
 
 # save and load model
 save_model_hdf5(model, "model_HPO_Auto.h5")
-model_HPO <- load_model_hdf5("model_HPO_Auto.h5")
+model <- load_model_hdf5("model_HPO_Auto.h5")
