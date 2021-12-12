@@ -119,9 +119,9 @@ ggroc(list(train=roc_rf_af_train, validation=roc_rf_af_valid, test=roc_rf_af_tes
   labs(color = "")
 
 # AUC
-auc(roc_rf_af_train)
-auc(roc_rf_af_valid)
-auc(roc_rf_af_test)
+auc(roc_rf_af_train) # 0.9979
+auc(roc_rf_af_valid) # 0.9894
+auc(roc_rf_af_test)  # 0.8601
 
 
 
