@@ -75,4 +75,54 @@ auc(roc_lvq_validation) # 0.9045
 auc(roc_lvq_test) # 0.8265
 
 
+### Random Forest on AF (Local + Aggregated) - 165 variables ###
+
+# all features (directly from "Transformation.R")
+train_all <- train_af
+valid_all <- valid_af
+test_all <- test_af
+
+# features
+validation_af_features <- valid_all %>% select(-class)
+test_af_features <- test_all %>% select(-class)
+
+# fit the model
+set.seed(2021)
+rand_forest_af <- randomForest(class~., data = train_all, mtry = 12, importance =TRUE)
+# mtry = √p = √165 = 12 (rounded down) - all features
+rand_forest_af
+
+# predictions
+preds_rf_af_validation <- predict(rand_forest_af, newdata = validation_af_features)
+preds_rf_af_test <- predict(rand_forest_af, newdata = test_af_features)
+
+# Classification Matrix
+conf_matrix_af <- confusionMatrix(test_af$class, preds_rf_af_test, positive = "1")
+conf_matrix_af
+
+rf_evaluation_af <- data.frame(conf_matrix_af$byClass)
+rf_evaluation_af
+
+# AUC/ROC
+# get probabilities
+preds_rf_af_validation <- predict(rand_forest_af, newdata = validation_af_features, type="prob")
+preds_rf_af_test <- predict(rand_forest_af, newdata = test_af_features, type="prob")
+
+# ROC Train
+roc_rf_af_train <- roc(train_all$class, rand_forest_af$votes[,2])
+# ROC Validation
+roc_rf_af_valid <- roc(valid_all$class, preds_rf_af_validation[,1])
+# ROC Test
+roc_rf_af_test <- roc(test_all$class, preds_rf_af_test[,1])
+ggroc(list(train=roc_rf_af_train, validation=roc_rf_af_valid, test=roc_rf_af_test), legacy.axes = TRUE) +
+  ggtitle("ROC of best Random Forest model on all features") +
+  labs(color = "")
+
+# AUC
+auc(roc_rf_af_train)
+auc(roc_rf_af_valid)
+auc(roc_rf_af_test)
+
+
+
 
