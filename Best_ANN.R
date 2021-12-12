@@ -25,15 +25,22 @@ x_valid <- valid_lf %>%  # predictor variables
   select(-class) %>%
   as.matrix()
 
+x_test <- test_lf %>%  # predictor variables
+  select(-class) %>%
+  as.matrix()
+
 # set positive class 1 as fraud and 0 as licit (non-fraud)
 levels(train_lf$class) <- c(1, 0)
 levels(valid_lf$class) <- c(1, 0)
+levels(test_lf$class) <- c(1, 0)
 
 table(train_lf$class)
 table(valid_lf$class)
+table(test_lf$class)
 
 y_train <- to_categorical(train_lf$class)  # outcome/target variable
-y_valid <- to_categorical(valid_lf$class)  # outcome/target variable
+y_valid <- to_categorical(valid_lf$class)  
+y_test <- to_categorical(test_lf$class)
 
 #___________________________________________________________________
 
@@ -173,13 +180,41 @@ evaluation
 
 # ROC Train/Validation
 roc_train <- roc(train_lf$class, probabilities_train$V1)
-roc_test <- roc(valid_lf$class, probabilities$V1)
-ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
+roc_valid <- roc(valid_lf$class, probabilities$V1)
+ggroc(list(Train = roc_train, Validation = roc_valid), legacy.axes = TRUE) +
   ggtitle("ROC of best ANN model with Local features") +
   labs(color = "")
 auc(roc_train) # 0.988, 0.9965, 0.9937, 0.9833, 0.9929
-auc(roc_test) # 0.9812, 0.9668, 0.9624, 0.9770, 0.9837
+auc(roc_valid) # 0.9812, 0.9668, 0.9624, 0.9770, 0.9837
 
 # save and load model
 save_model_hdf5(model, "model_HPO_Auto.h5")
 model <- load_model_hdf5("model_HPO_Auto.h5")
+
+# test data predictions
+predictions_test <- model %>% predict_classes(x_test, batch_size = 128)
+probabilities_test <- model %>% predict_proba(x_test) %>% as.data.frame()
+
+# swap levels in predictions. Make 1 first
+predictions_test <- relevel((as.factor(predictions_test)), "1")
+table(predictions_test)
+
+# confusion matrix
+conf_matrix_test <- confusionMatrix(test_lf$class, predictions_test)
+conf_matrix_test
+
+# evaluation by class
+evaluation_test <- data.frame(conf_matrix_test$byClass)
+evaluation_test
+
+# ROC Test
+roc_test <- roc(test_lf$class, probabilities_test$V1)
+ggroc(list(Train = roc_train, Validation = roc_valid, Test = roc_test), 
+      legacy.axes = TRUE) +
+  ggtitle("ROC of best ANN model with Local features") +
+  labs(color = "")
+auc(roc_test) # 0.8416
+
+
+
+
