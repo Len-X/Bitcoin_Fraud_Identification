@@ -80,11 +80,13 @@ auc(roc_lvq_test) # 0.8265
 # all features (directly from "Transformation.R")
 train_all <- train_af
 valid_all <- valid_af
-test_all <- test_af
+# test_all <- test_af
+# test_all <- down_test_af # down-sampled test data
+test_all <- up_test_af # down-sampled test data
 
 # features
 validation_af_features <- valid_all %>% select(-class)
-test_af_features <- test_all %>% select(-class)
+test_af_features <- test_all %>% select(-Class) #!
 
 # fit the model
 set.seed(2021)
@@ -97,7 +99,7 @@ preds_rf_af_validation <- predict(rand_forest_af, newdata = validation_af_featur
 preds_rf_af_test <- predict(rand_forest_af, newdata = test_af_features)
 
 # Classification Matrix
-conf_matrix_af <- confusionMatrix(test_af$class, preds_rf_af_test, positive = "1")
+conf_matrix_af <- confusionMatrix(test_af$class, preds_rf_af_test, positive = "1") # down_test_af$Class
 conf_matrix_af
 
 rf_evaluation_af <- data.frame(conf_matrix_af$byClass)
@@ -121,7 +123,7 @@ ggroc(list(train=roc_rf_af_train, validation=roc_rf_af_valid, test=roc_rf_af_tes
 # AUC
 auc(roc_rf_af_train) # 0.9979
 auc(roc_rf_af_valid) # 0.9894
-auc(roc_rf_af_test)  # 0.8601
+auc(roc_rf_af_test)  # 0.8601, 0.8676, 0.8613
 
 
 

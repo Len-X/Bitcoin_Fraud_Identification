@@ -242,6 +242,9 @@ table(down_train_lf$Class)
 #    1    2 
 # 2871 2871 
 
+# test data (just to check hypothesis)
+down_test_af <- downSample(x = test_af[,-1], y = test_af$class)
+
 # Autoencoder data
 down_train_ae <- downSample(x = train_ae[,-1], y = train_ae$class)
 
@@ -270,6 +273,9 @@ table(up_train_lf$Class)
 
 #     1     2 
 # 23510 23510 
+
+# upsampling of test data (to check hypothesis)
+up_test_af <- upSample(x = test_af[,-1], y = test_af$class)
 
 # Upsample before running Autoencoder / Raw data
 train_lf_up <- upSample(x = train_lf[,-1], y = train_lf$class)
