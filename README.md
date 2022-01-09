@@ -39,22 +39,23 @@ Data folders: `elliptic_bitcoin_dataset` and `Data`:
 
 `elliptic_bitcoin_dataset` - contains raw Bitcoin transactions data set via 3 csv files:
 
-- [Elliptic_txs_classes.csv](/elliptic_bitcoin_dataset/elliptic_txs_classes.csv) - contains tax ids and classes.
-- Elliptic_txs_edgelist.csv - contains edges linking two tax ids.
-- Elliptic_txs_features.csv - contains tax ids, time steps and all local and aggregated features.
+- [elliptic_txs_classes.csv](/elliptic_bitcoin_dataset/elliptic_txs_classes.csv) - contains tax ids and classes.
+- [elliptic_txs_edgelist.csv](/elliptic_bitcoin_dataset/elliptic_txs_edgelist.csv) - contains edges linking two tax ids.
+- [elliptic_txs_features.csv](/elliptic_bitcoin_dataset/elliptic_txs_features.csv) - contains tax ids, time steps and all local and aggregated features.
 
-Data - contains processed data csv files:
-Bitcoin_Full_df.csv - consolidated data set of Bitcoin tax ids, classes, and features.
-ae_20_AF_test.csv - Autoencoder extracted features of all features of the test data set. 
-ae_20_AF_train.csv - Autoencoder extracted features of all features of the train data set.
-ae_20_AF_valid.csv - Autoencoder extracted features of all features of the validation data set.
-ae_20_down_train.csv - Autoencoder extracted features of Local features with down-sampling of the train data set.
-ae_20_variables_test.csv - Autoencoder extracted features of Local features of the test data set.
-ae_20_variables_train.csv - Autoencoder extracted features of Local features of the train data set.
-ae_20_variables_valid.csv - Autoencoder extracted features of Local features of the validation data set.
-transformed_test_local_features.csv - transformed Local features of the test data set.
-transformed_train_local_features.csv - transformed Local features of the train data set.
-transformed_valid_local_features.csv - transformed Local features of the validation data set.
+`Data` - contains processed data csv files:
+
+- [Bitcoin_Full_df.csv](/Data/Bitcoin_Full_df.csv) - consolidated data set of Bitcoin tax ids, classes, and features.
+- [ae_20_AF_test.csv](/Data/Bitcoin_Full_df.csv) - Autoencoder extracted features of all features of the test data set. 
+- [ae_20_AF_train.csv](/Data/ae_20_AF_train.csv) - Autoencoder extracted features of all features of the train data set.
+- [ae_20_AF_valid.csv](/Data/ae_20_AF_valid.csv) - Autoencoder extracted features of all features of the validation data set.
+- [ae_20_down_train.csv](/Data/ae_20_down_train.csv) - Autoencoder extracted features of Local features with down-sampling of the train data set.
+- [ae_20_variables_test.csv](/Data/ae_20_variables_test.csv) - Autoencoder extracted features of Local features of the test data set.
+- [ae_20_variables_train.csv](/Data/ae_20_variables_train.csv) - Autoencoder extracted features of Local features of the train data set.
+- [ae_20_variables_valid.csv](/Data/ae_20_variables_valid.csv) - Autoencoder extracted features of Local features of the validation data set.
+- [transformed_test_local_features.csv](/Data/transformed_test_local_features.csv) - transformed Local features of the test data set.
+- [transformed_train_local_features.csv](/Data/transformed_train_local_features.csv) - transformed Local features of the train data set.
+- [transformed_valid_local_features.csv](/Data/transformed_valid_local_features.csv) - transformed Local features of the validation data set.
 
 
 
