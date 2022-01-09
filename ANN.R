@@ -1,4 +1,4 @@
-### Artificial Neural Network ###   06.20.2021
+# Artificial Neural Network
 
 # Load libraries
 library(tidyverse)
@@ -7,11 +7,9 @@ suppressPackageStartupMessages(library(keras))
 library(tensorflow)
 library(pROC)
 
-
 # Neural Network on Local Features
 
 # Data Preprocessing
-
 # load data from "Transformation.R"
 str(train_lf) # train data, local features
 str(valid_lf) # validation data, local features
@@ -50,7 +48,6 @@ dimnames(x_valid) <- NULL
 ## Build the NN model ##
 
 set.seed(2021)
-
 # initialize a sequential model
 model <- keras_model_sequential()   # baseline model
 
@@ -184,8 +181,8 @@ roc_test <- roc(valid_lf$class, probabilities$V1)
 ggroc(list(Train = roc_train, Validation = roc_test), legacy.axes = TRUE) +
   ggtitle("ROC of Baseline ANN with Local features") +
   labs(color = "")
-auc(roc_train) # 0.9991, 0.9997
-auc(roc_test) # 0.937, 0.9373
+auc(roc_train)
+auc(roc_test)
 
 # ROC Train/Validation for 2-nd model
 roc_train_2 <- roc(train_lf$class, probabilities_train_2$V1)
@@ -193,12 +190,11 @@ roc_test_2 <- roc(valid_lf$class, probabilities_2$V1)
 ggroc(list(Train = roc_train_2, Validation = roc_test_2), legacy.axes = TRUE) +
   ggtitle("ROC of 2nd ANN model with Local features") +
   labs(color = "")
-auc(roc_train_2) # 0.9975
-auc(roc_test_2) # 0.9846
+auc(roc_train_2)
+auc(roc_test_2)
 
 
 # ANN 3rd model with L2-regularization
-
 model_3 <- keras_model_sequential() # 3rd model
 
 # set model with λ value = 0.001
@@ -262,7 +258,7 @@ auc(roc_test_3)
 
 
 # ANN 4th model with Class Weights
-# 1st iter - 100 instances of class 1 (fraud) and 10 instances of class 0 (non-fraud)
+# 1st iter - 10 instances of class 1 (fraud) and 1 instance of class 0 (non-fraud)
 
 model_4 <- keras_model_sequential() # 4th model
 # use same architecture as with baseline
@@ -318,12 +314,11 @@ roc_test_4 <- roc(valid_lf$class, probabilities_4$V1)
 ggroc(list(Train = roc_train_4, Validation = roc_test_4), legacy.axes = TRUE) +
   ggtitle("ROC of 4th ANN model with Local features") +
   labs(color = "")
-auc(roc_train_4) # 0.999
-auc(roc_test_4) # 0.9814
+auc(roc_train_4)
+auc(roc_test_4)
 
 
 # ANN 5th model with L2-regularization and Dropout (0.5)
-
 model_5 <- keras_model_sequential() # 5th model
 
 # set model with λ value = 0.001 and dropout rate 0.5
@@ -385,9 +380,8 @@ roc_test_5 <- roc(valid_lf$class, probabilities_5$V1)
 ggroc(list(Train = roc_train_5, Validation = roc_test_5), legacy.axes = TRUE) +
   ggtitle("ROC of 5th ANN model with Local features") +
   labs(color = "")
-auc(roc_train_5) # 0.9879
-auc(roc_test_5) # 0.9793
-
+auc(roc_train_5)
+auc(roc_test_5)
 
 # safe and load the models
 
@@ -430,32 +424,6 @@ model_5 <- load_model_hdf5("5th_model.h5")
 # save history as df and safe to csv
 history_df_5 <- as.data.frame(history_5)
 write.csv(history_df_5, "history_df_5_1st_iter.csv", row.names = FALSE)
-
-
-## Compare the models
-
-# plot the model loss of the training data (baseline model)
-plot(history$metrics$loss, main="Baseline Model Loss", 
-     xlab = "epoch", 
-     ylab="loss", 
-     col="coral", 
-     type="l",
-     ylim = c(0,1), lwd = 2)
-# plot the model loss of the test data
-lines(history$metrics$val_loss, col="darkturquoise", lwd = 2)
-# add legend
-legend("topright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
-
-# plot the model accuracy of the training data (baseline model)
-plot(history$metrics$acc, main="Baseline Model Accuracy", 
-     xlab = "epoch", 
-     ylab="loss", 
-     col="coral", 
-     type="l",
-     ylim = c(0.6, 1), lwd = 2)
-# model accuracy of the test data
-lines(history$metrics$val_acc, col="darkturquoise", lwd = 2)
-legend("bottomright", c("train","validation"), col=c("coral", "darkturquoise"), lty=c(1,1))
 
 
 ## Neural Network on All Features (AF)
@@ -543,8 +511,8 @@ roc_test_6 <- roc(valid_lf$class, probabilities_6$V1)
 ggroc(list(Train = roc_train_6, Validation = roc_test_6), legacy.axes = TRUE) +
   ggtitle("ROC of 6th ANN model with All features") +
   labs(color = "")
-auc(roc_train_6) # 1
-auc(roc_test_6) # 0.9284
+auc(roc_train_6)
+auc(roc_test_6)
 
 # save and load 6th model
 save_model_hdf5(model_6, "6th_model.h5")
@@ -641,8 +609,8 @@ roc_test_7 <- roc(x_valid_ae$class, probabilities_7$V1)
 ggroc(list(Train = roc_train_7, Validation = roc_test_7), legacy.axes = TRUE) +
   ggtitle("ROC of 7th ANN model with 20 Aeutoencoded Local features") +
   labs(color = "")
-auc(roc_train_7) # 0.9929
-auc(roc_test_7) # 0.9495
+auc(roc_train_7)
+auc(roc_test_7)
 
 # save and load 7th model
 save_model_hdf5(model_7, "7th_model.h5")
@@ -739,8 +707,8 @@ roc_test_8 <- roc(x_valid_ae$class, probabilities_8$V1)
 ggroc(list(Train = roc_train_8, Validation = roc_test_8), legacy.axes = TRUE) +
   ggtitle("ROC of 8th ANN model with 20 Aeutoencoded All features") +
   labs(color = "")
-auc(roc_train_8) # 0.9943
-auc(roc_test_8) # 0.9205
+auc(roc_train_8)
+auc(roc_test_8)
 
 # save and load 8th model
 save_model_hdf5(model_8, "8th_model.h5")
@@ -803,8 +771,6 @@ evaluation_9
 
 score_9 <- model_9 %>% evaluate(x_valid, y_valid, batch_size = 128)
 print(score_9)
-#       loss   accuracy 
-# 0.08192353 0.98044229 
 
 # ROC Train/Validation for 9rd model
 roc_train_9 <- roc(train_lf$class, probabilities_train_9$V1)
@@ -812,14 +778,11 @@ roc_test_9 <- roc(valid_lf$class, probabilities_9$V1)
 ggroc(list(Train = roc_train_9, Validation = roc_test_9), legacy.axes = TRUE) +
   ggtitle("ROC of best ANN model with Local features") + # with HPO
   labs(color = "")
-auc(roc_train_9) # 0.9909
-auc(roc_test_9)  # 0.9839
+auc(roc_train_9)
+auc(roc_test_9)
 
 # save and load 9th model
 save_model_hdf5(model_9, "9th_model_hpo.h5")
 model_9 <- load_model_hdf5("9th_model_hpo.h5")
-
-
-
 
 
