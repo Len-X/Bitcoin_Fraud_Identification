@@ -39,7 +39,7 @@ Data folders: `elliptic_bitcoin_dataset` and `Data`:
 
 `elliptic_bitcoin_dataset` - contains raw Bitcoin transactions data set via 3 csv files:
 
-- [Elliptic_txs_classes.csv](Bitcoin_Fraud_Identification/blob/main/elliptic_bitcoin_dataset/Elliptic_txs_classes.csv) - contains tax ids and classes.
+- [Elliptic_txs_classes.csv](/elliptic_bitcoin_dataset/elliptic_txs_classes.csv) - contains tax ids and classes.
 - Elliptic_txs_edgelist.csv - contains edges linking two tax ids.
 - Elliptic_txs_features.csv - contains tax ids, time steps and all local and aggregated features.
 
