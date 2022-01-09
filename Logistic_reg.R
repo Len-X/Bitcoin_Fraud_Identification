@@ -1,4 +1,4 @@
-# Logistic Regression Classification Model
+# Logistic Regression Classification Models
 
 # Load libraries
 library(tidyverse)
