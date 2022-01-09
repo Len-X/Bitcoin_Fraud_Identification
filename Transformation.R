@@ -1,6 +1,6 @@
 # Data Transformation and Sampling
 
-# install necessary packeges
+# install necessary packages
 # install.packages("bestNormalize")
 # install.packages("ROSE")
 
