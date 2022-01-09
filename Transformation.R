@@ -1,15 +1,17 @@
-# Data Transformation and Sampling 05.29.2021
+# Data Transformation and Sampling
 
 # install necessary packeges
 # install.packages("bestNormalize")
 # install.packages("ROSE")
-# install.packages("DMwR")
+
+# load libraries
 library(tidyverse)
 library(ggplot2)
 library(caret)
+library(MASS) # for Box-Cox
 library(bestNormalize)
 library(ROSE)
-# library(DMwR) # SMOTE sampling
+
 
 ### Data Preprocessing ###
 
@@ -28,7 +30,6 @@ levels(df$class) <- sub("unknown", 3, levels(df$class))
 ### Train / Validation / Test Split ###
 
 set.seed(2021)
-
 # full df with all features
 train_full <- df %>% filter(TimeStep <= 29)
 valid_full <- df %>% filter(TimeStep > 29 & TimeStep <= 39)
@@ -93,8 +94,6 @@ min(shifted_test)  # [1] 0.003394184
 
 ### Box-Cox Transformation ###
 
-library(MASS)
-
 #estimate a Box–Cox transformation 
 bc_preprocess <- preProcess(shitfed_train, method = "BoxCox")
 
@@ -120,14 +119,12 @@ bc1 <- boxcox(shitfed_train$Local_15 ~ shitfed_train$Local_90,
 
 
 ## Box-Cox Transformation with bestNormalize ##
-
 # check Box-Cox again
 boxcox_obj_1 <- boxcox(shitfed_train$Local_1)
 boxcox_obj_1
 hist(boxcox_obj_1$x.t)
 
 ### Yeo-Johnson Transformation  ###
-
 yeojohnson_obj_1 <- yeojohnson(shitfed_train$Local_1)
 yeojohnson_obj_1
 hist(yeojohnson_obj_1$x.t)
@@ -159,28 +156,17 @@ BN_obj_train_lf
 transformed_train_lf <- data.frame(predict(BN_obj_train_lf))
 hist(transformed_train_lf$Local_1)
 
-# manual method
-# transformed_train_lf <- c() 
-# for(i in 1:93){
-#   transformed_train_lf <- cbind(transformed_train_lf, BN_obj_train_lf[[i]]$x.t) }
-
 # combine transformed features with true class
 df_class_train <- train_lf %>%
   select(1)
 
 transformed_train_lf <- cbind(df_class_train, transformed_train_lf)
 
-# save to csv
-# write.csv(transformed_train_lf,"~/Desktop/MASTERS/Bitcoin/transformed_train_local_features.csv", row.names = FALSE)
-
-
-
 # run bestNormalize methods on all Validation variables
 BN_obj_valid_lf <- lapply(shifted_valid, function(x) bestNormalize(x))
 BN_obj_valid_lf
 
 # transform variables and save the result to df
-# efficient method
 transformed_valid_lf <- data.frame(predict(BN_obj_valid_lf))
 
 # combine transformed features with true class
@@ -189,16 +175,11 @@ df_class_valid <- valid_lf %>%
 
 transformed_valid_lf <- cbind(df_class_valid, transformed_valid_lf)
 
-# save to csv
-# write.csv(transformed_valid_lf,"~/Desktop/MASTERS/Bitcoin/transformed_valid_local_features.csv", row.names = FALSE)
-
-
 # run bestNormalize methods on all Test variables
 BN_obj_test_lf <- lapply(shifted_test, function(x) bestNormalize(x))
 BN_obj_test_lf
 
 # transform variables and save the result to df
-# efficient method
 transformed_test_lf <- data.frame(predict(BN_obj_test_lf))
 
 # combine transformed features with true class
@@ -207,13 +188,8 @@ df_class_test <- test_lf %>%
 
 transformed_test_lf <- cbind(df_class_test, transformed_test_lf)
 
-# save to csv
-# write.csv(transformed_test_lf,"~/Desktop/MASTERS/Bitcoin/transformed_test_local_features.csv", row.names = FALSE)
-
-
 
 ### Sampling of the Imbalanced data ###
-
 
 # Load transformed data
 train_lf_trans <- read.csv("Bitcoin_Fraud_Identification/Data/transformed_train_local_features.csv")
@@ -233,14 +209,10 @@ valid_ae$class <- factor(valid_ae$class, levels = c(1,2))
 # Downsapling #
 
 set.seed(2021)
-
 # transformed data
 down_train_lf <- downSample(x = train_lf_trans[,-1], y = train_lf_trans$class)
 
 table(down_train_lf$Class)
-
-#    1    2 
-# 2871 2871 
 
 # test data (just to check hypothesis)
 down_test_af <- downSample(x = test_af[,-1], y = test_af$class)
@@ -250,29 +222,18 @@ down_train_ae <- downSample(x = train_ae[,-1], y = train_ae$class)
 
 table(down_train_ae$Class)
 
-#    1    2 
-# 2871 2871
-
 # downsample before running Autoencoder
 train_lf_down <- downSample(x = train_lf[,-1], y = train_lf$class)
 
 table(train_lf_down$Class)
 
-#    1    2 
-# 2871 2871
-
-
 # Upsampling #
 
 set.seed(2021)
-
 # transformed data
 up_train_lf <- upSample(x = train_lf_trans[,-1], y = train_lf_trans$class)
 
 table(up_train_lf$Class)
-
-#     1     2 
-# 23510 23510 
 
 # upsampling of test data (to check hypothesis)
 up_test_af <- upSample(x = test_af[,-1], y = test_af$class)
@@ -282,10 +243,6 @@ train_lf_up <- upSample(x = train_lf[,-1], y = train_lf$class)
 
 table(train_lf_up$Class)
 
-#     1     2 
-# 23510 23510 
-
-
 # Hybrid sampling methods
 # add new synthetic data points to the minority class and downsample the majority class
 
@@ -294,17 +251,10 @@ train_lf_rose <- ROSE(class~., data=train_lf_trans)$data
 
 table(train_lf_rose$class)
 
-#     2     1 
-# 13179 13202
-
 # ROSE method on raw data
 train_rose_lf <- ROSE(class~., data=train_lf)$data
 
 table(train_rose_lf$class)
-
-#     2     1 
-# 13061 13320 
-
 
 ### Using weights for the imbalanced data ###
 
