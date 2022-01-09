@@ -1,5 +1,6 @@
 # HPO for ANN
 
+# install necessary packages
 # install.packages("tfruns")
 
 # Load libraries
@@ -39,7 +40,6 @@ dimnames(x_train) <- NULL
 dimnames(x_valid) <- NULL
 
 # build the model
-
 set.seed(2021)
 
 FLAGS <- flags(
