@@ -1,4 +1,5 @@
-# Testing best performed models on the test set
+# Testing best performing models on the test set
+# Logistic Regression and Random Forest
 
 # Load libraries
 library(tidyverse)
@@ -57,7 +58,6 @@ lvq_glm_evaluation <- data.frame(conf_matrix_lvq$byClass)
 lvq_glm_evaluation
 
 # AUC/ROC
-
 # ROC Train
 fit_lvq <- fitted(glm_lvq)
 roc_lvq_train <- roc(lvq_train$class, fit_lvq)
@@ -70,9 +70,9 @@ ggroc(list(train=roc_lvq_train, validation=roc_lvq_validation, test=roc_lvq_test
   labs(color = "")
 
 # AUC
-auc(roc_lvq_train) # 0.943
-auc(roc_lvq_validation) # 0.9045
-auc(roc_lvq_test) # 0.8265
+auc(roc_lvq_train)
+auc(roc_lvq_validation)
+auc(roc_lvq_test)
 
 
 ### Random Forest on AF (Local + Aggregated) - 165 variables ###
@@ -80,9 +80,10 @@ auc(roc_lvq_test) # 0.8265
 # all features (directly from "Transformation.R")
 train_all <- train_af
 valid_all <- valid_af
-# test_all <- test_af
-# test_all <- down_test_af # down-sampled test data
-test_all <- up_test_af # down-sampled test data
+test_all <- test_af
+
+# test_all <- down_test_af # down-sampled test data (hypothesis testing only)
+# test_all <- up_test_af # up-sampled test data (hypothesis testing only)
 
 # features
 validation_af_features <- valid_all %>% select(-class)
@@ -121,9 +122,9 @@ ggroc(list(train=roc_rf_af_train, validation=roc_rf_af_valid, test=roc_rf_af_tes
   labs(color = "")
 
 # AUC
-auc(roc_rf_af_train) # 0.9979
-auc(roc_rf_af_valid) # 0.9894
-auc(roc_rf_af_test)  # 0.8601, 0.8676, 0.8613
+auc(roc_rf_af_train)
+auc(roc_rf_af_valid)
+auc(roc_rf_af_test)
 
 
 
