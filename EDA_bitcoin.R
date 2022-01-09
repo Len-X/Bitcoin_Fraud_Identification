@@ -1,4 +1,4 @@
-# EDA of Bitcoin data 01.22.2021
+# EDA of Bitcoin data
 
 # Install necessary packeges
 # Install packages if necessary
